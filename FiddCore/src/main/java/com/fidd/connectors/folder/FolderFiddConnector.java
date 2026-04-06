@@ -3,9 +3,6 @@ package com.fidd.connectors.folder;
 import com.fidd.connectors.FiddConnector;
 import com.fidd.connectors.base.BaseDirectoryConnector;
 import com.fidd.core.common.SubFileInputStream;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -14,12 +11,13 @@ import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.List;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class FolderFiddConnector extends BaseDirectoryConnector implements FiddConnector {
-    public final static Logger LOGGER = LoggerFactory.getLogger(FolderFiddConnector.class);
+  public static final Logger LOGGER = LoggerFactory.getLogger(FolderFiddConnector.class);
 
     protected final String fiddFolderPath;
     protected final Path fiddFolder;

@@ -1,0 +1,293 @@
+openapi: 3.0.3
+info:
+  title: Fidd Connector API
+  version: 1.0.0
+  description: REST wrapper over FiddConnector
+
+servers:
+  - url: http://localhost:8080
+
+tags:
+  - name: messages
+  - name: keys
+  - name: signatures
+
+paths:
+  /{fiddId}/messages/{messageNumber}/keys/candidates:
+    post:
+      operationId: getFiddKeyCandidates
+      tags: [ keys ]
+      summary: Get Fidd key candidates by footprint
+      parameters:
+        - $ref: '#/components/parameters/FiddId'
+        - $ref: '#/components/parameters/MessageNumber'
+      requestBody:
+        required: true
+        content:
+          application/octet-stream:
+            schema:
+              type: string
+              format: binary
+      responses:
+        '200':
+          description: Candidate keys as base64-encoded byte arrays
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+                  format: byte
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /{fiddId}/messages/{messageNumber}/keys/lookup:
+    post:
+      operationId: getFiddKey
+      tags: [ keys ]
+      summary: Resolve a concrete Fidd key by key bytes
+      parameters:
+        - $ref: '#/components/parameters/FiddId'
+        - $ref: '#/components/parameters/MessageNumber'
+      requestBody:
+        required: true
+        content:
+          application/octet-stream:
+            schema:
+              type: string
+              format: binary
+      responses:
+        '200':
+          description: Fidd key content
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /{fiddId}/messages/{messageNumber}/keys/unencrypted:
+    get:
+      operationId: getUnencryptedFiddKey
+      tags: [ keys ]
+      summary: Get unencrypted Fidd key content
+      parameters:
+        - $ref: '#/components/parameters/FiddId'
+        - $ref: '#/components/parameters/MessageNumber'
+      responses:
+        '200':
+          description: Unencrypted Fidd key content
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /{fiddId}/messages/{messageNumber}/content/size:
+    get:
+      operationId: getFiddMessageSize
+      tags: [ messages ]
+      summary: Get raw Fidd message size in bytes
+      parameters:
+        - $ref: '#/components/parameters/FiddId'
+        - $ref: '#/components/parameters/MessageNumber'
+      responses:
+        '200':
+          description: Raw Fidd message size
+          content:
+            application/json:
+              schema:
+                type: integer
+                format: int64
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /{fiddId}/messages/{messageNumber}/content:
+    get:
+      operationId: getFiddMessageChunk
+      tags: [ messages ]
+      summary: Read a raw Fidd message chunk
+      parameters:
+        - $ref: '#/components/parameters/FiddId'
+        - $ref: '#/components/parameters/MessageNumber'
+        - name: offset
+          in: query
+          required: true
+          schema:
+            type: integer
+            format: int64
+            minimum: 0
+        - name: length
+          in: query
+          required: true
+          schema:
+            type: integer
+            format: int64
+            minimum: 0
+      responses:
+        '200':
+          description: Raw Fidd message chunk
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /{fiddId}/messages/{messageNumber}/signatures/key/count:
+    get:
+      operationId: getFiddKeySignatureCount
+      tags: [ signatures ]
+      summary: Get number of signatures for the Fidd key file
+      parameters:
+        - $ref: '#/components/parameters/FiddId'
+        - $ref: '#/components/parameters/MessageNumber'
+      responses:
+        '200':
+          description: Signature count
+          content:
+            application/json:
+              schema:
+                type: integer
+                format: int32
+                minimum: 0
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /{fiddId}/messages/{messageNumber}/signatures/key/{index}:
+    get:
+      operationId: getFiddKeySignature
+      tags: [ signatures ]
+      summary: Get one signature from the Fidd key file
+      parameters:
+        - $ref: '#/components/parameters/FiddId'
+        - $ref: '#/components/parameters/MessageNumber'
+        - $ref: '#/components/parameters/SignatureIndex'
+      responses:
+        '200':
+          description: Signature bytes
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /{fiddId}/messages/{messageNumber}/signatures/message/count:
+    get:
+      operationId: getFiddMessageSignatureCount
+      tags: [ signatures ]
+      summary: Get number of signatures for the Fidd message file
+      parameters:
+        - $ref: '#/components/parameters/FiddId'
+        - $ref: '#/components/parameters/MessageNumber'
+      responses:
+        '200':
+          description: Signature count
+          content:
+            application/json:
+              schema:
+                type: integer
+                format: int32
+                minimum: 0
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /{fiddId}/messages/{messageNumber}/signatures/message/{index}:
+    get:
+      operationId: getFiddMessageSignature
+      tags: [ signatures ]
+      summary: Get one signature from the Fidd message file
+      parameters:
+        - $ref: '#/components/parameters/FiddId'
+        - $ref: '#/components/parameters/MessageNumber'
+        - $ref: '#/components/parameters/SignatureIndex'
+      responses:
+        '200':
+          description: Signature bytes
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+components:
+  parameters:
+    FiddId:
+      name: fiddId
+      in: path
+      required: true
+      schema:
+        type: string
+      description: Name of the Fidd instance
+    MessageNumber:
+      name: messageNumber
+      in: path
+      required: true
+      schema:
+        $ref: './schemas/MessageNumber.yaml'
+    SignatureIndex:
+      name: index
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int32
+        minimum: 0
+
+  responses:
+    NotFoundError:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: './schemas/Error.yaml'
+    BadRequestError:
+      description: Invalid input
+      content:
+        application/json:
+          schema:
+            $ref: './schemas/Error.yaml'
+    InternalServerError:
+      description: Unexpected error
+      content:
+        application/json:
+          schema:
+            $ref: './schemas/Error.yaml'
+
+  schemas: { }
