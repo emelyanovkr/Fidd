@@ -38,11 +38,11 @@ dependencies {
 
 openApiGenerate {
     generatorName.set("spring")
-    inputSpec.set("$rootDir/spec/openapi.yaml")
+    inputSpec.set("$rootDir/FiddConnectorRestServer/src/main/resources/openapi/openapi.yaml")
     outputDir.set(layout.buildDirectory.dir("generated").get().asFile.absolutePath)
-    apiPackage.set("com.fidd.connector.rest.server.controller")
-    modelPackage.set("com.fidd.connector.rest.server.model")
-    invokerPackage.set("com.fidd.connector.rest.server.invoker")
+    apiPackage.set("com.fidd.connector.controller")
+    modelPackage.set("com.fidd.connector.model")
+    invokerPackage.set("com.fidd.connector.invoker")
 
     generateApiTests.set(false)
     generateApiDocumentation.set(false)

@@ -1,6 +1,7 @@
 plugins {
     id("java")
 }
+val openApiSpecPath = "$rootDir/FiddConnectorRestClient/src/main/resources/openapi/openapi.yaml"
 
 group = "com.fidd"
 version = "unspecified"

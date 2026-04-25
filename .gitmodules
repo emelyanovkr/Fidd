@@ -10,3 +10,9 @@
 [submodule "FiddView/src/main/resources/openapi"]
 	path = FiddView/src/main/resources/openapi
 	url = https://github.com/flower-org/FiddContentService.git
+[submodule "FiddConnectorRestServer/src/main/resources/openapi"]
+	path = FiddConnectorRestServer/src/main/resources/openapi
+	url = git@github.com:emelyanovkr/FiddCachingService.git
+[submodule "FiddConnectorRestClient/src/main/resources/openapi"]
+	path = FiddConnectorRestClient/src/main/resources/openapi
+	url = git@github.com:emelyanovkr/FiddCachingService.git
