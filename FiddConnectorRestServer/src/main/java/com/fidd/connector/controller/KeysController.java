@@ -17,12 +17,14 @@ public class KeysController implements KeysApi {
     this.fiddConnectorRestService = fiddConnectorRestService;
   }
 
+  // POST /messages/{messageNumber}/keys/lookup
   @Override
   public ResponseEntity<Resource> getFiddKey(Long messageNumber, Resource body) throws Exception {
     byte[] key = body.getInputStream().readAllBytes();
     return binaryResponse(fiddConnectorRestService.getFiddKey(messageNumber, key));
   }
 
+  // POST /messages/{messageNumber}/keys/candidates
   @Override
   public ResponseEntity<List<byte[]>> getFiddKeyCandidates(Long messageNumber, Resource body)
       throws Exception {
@@ -31,8 +33,9 @@ public class KeysController implements KeysApi {
         fiddConnectorRestService.getFiddKeyCandidates(messageNumber, footprint));
   }
 
+  // GET /messages/{messageNumber}/keys/unencrypted
   @Override
-  public ResponseEntity<Resource> getUnencryptedFiddKey(Long messageNumber) throws Exception {
+  public ResponseEntity<Resource> getUnencryptedFiddKey(Long messageNumber) {
     return binaryResponse(fiddConnectorRestService.getUnencryptedFiddKey(messageNumber));
   }
 

@@ -32,6 +32,8 @@ dependencies {
     implementation(project(":FiddCore"))
 
     implementation("org.springframework.boot:spring-boot-starter-web")
+    implementation("jakarta.validation:jakarta.validation-api")
+    implementation("org.openapitools:jackson-databind-nullable:0.2.10")
 
     testImplementation("org.springframework.boot:spring-boot-starter-test")
 }

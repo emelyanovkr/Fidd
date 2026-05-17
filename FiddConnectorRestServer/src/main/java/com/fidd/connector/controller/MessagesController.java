@@ -17,11 +17,13 @@ public class MessagesController implements MessagesApi {
     this.fiddConnectorRestService = fiddConnectorRestService;
   }
 
+  // GET /messages/{messageNumber}/content/size
   @Override
   public ResponseEntity<Long> getFiddMessageSize(Long messageNumber) {
     return ResponseEntity.ok(fiddConnectorRestService.getFiddMessageSize(messageNumber));
   }
 
+  // GET /messages/{messageNumber}/content?offset=...&length=...
   @Override
   public ResponseEntity<Resource> getFiddMessageChunk(
       Long messageNumber, Long offset, Long length) {

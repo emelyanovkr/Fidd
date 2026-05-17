@@ -16,25 +16,27 @@ public class SignaturesController implements SignaturesApi {
     this.fiddConnectorRestService = fiddConnectorRestService;
   }
 
+  // GET /messages/{messageNumber}/signatures/key/{index}
   @Override
-  public ResponseEntity<Resource> getFiddKeySignature(Long messageNumber, Integer index)
-      throws Exception {
+  public ResponseEntity<Resource> getFiddKeySignature(Long messageNumber, Integer index) {
     return binaryResponse(fiddConnectorRestService.getFiddKeySignature(messageNumber, index));
   }
 
+  // GET /messages/{messageNumber}/signatures/key/count
   @Override
-  public ResponseEntity<Integer> getFiddKeySignatureCount(Long messageNumber) throws Exception {
+  public ResponseEntity<Integer> getFiddKeySignatureCount(Long messageNumber) {
     return ResponseEntity.ok(fiddConnectorRestService.getFiddKeySignatureCount(messageNumber));
   }
 
+  // GET /messages/{messageNumber}/signatures/message/{index}
   @Override
-  public ResponseEntity<Resource> getFiddMessageSignature(Long messageNumber, Integer index)
-      throws Exception {
+  public ResponseEntity<Resource> getFiddMessageSignature(Long messageNumber, Integer index) {
     return binaryResponse(fiddConnectorRestService.getFiddMessageSignature(messageNumber, index));
   }
 
+  // GET /messages/{messageNumber}/signatures/message/count
   @Override
-  public ResponseEntity<Integer> getFiddMessageSignatureCount(Long messageNumber) throws Exception {
+  public ResponseEntity<Integer> getFiddMessageSignatureCount(Long messageNumber) {
     return ResponseEntity.ok(fiddConnectorRestService.getFiddMessageSignatureCount(messageNumber));
   }
 
