@@ -1,6 +1,7 @@
 package com.fidd.connector.controller;
 
 import com.fidd.connector.service.FiddConnectorRestService;
+import java.io.InputStream;
 import java.util.List;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
@@ -20,17 +21,21 @@ public class KeysController implements KeysApi {
   // POST /messages/{messageNumber}/keys/lookup
   @Override
   public ResponseEntity<Resource> getFiddKey(Long messageNumber, Resource body) throws Exception {
-    byte[] key = body.getInputStream().readAllBytes();
-    return binaryResponse(fiddConnectorRestService.getFiddKey(messageNumber, key));
+    try (InputStream inputStream = body.getInputStream()) {
+      byte[] key = inputStream.readAllBytes();
+      return binaryResponse(fiddConnectorRestService.getFiddKey(messageNumber, key));
+    }
   }
 
   // POST /messages/{messageNumber}/keys/candidates
   @Override
   public ResponseEntity<List<byte[]>> getFiddKeyCandidates(Long messageNumber, Resource body)
       throws Exception {
-    byte[] footprint = body.getInputStream().readAllBytes();
-    return ResponseEntity.ok(
-        fiddConnectorRestService.getFiddKeyCandidates(messageNumber, footprint));
+    try (InputStream inputStream = body.getInputStream()) {
+      byte[] footprint = inputStream.readAllBytes();
+      return ResponseEntity.ok(
+          fiddConnectorRestService.getFiddKeyCandidates(messageNumber, footprint));
+    }
   }
 
   // GET /messages/{messageNumber}/keys/unencrypted

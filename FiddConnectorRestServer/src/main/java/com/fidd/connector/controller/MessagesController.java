@@ -5,6 +5,7 @@ import java.io.InputStream;
 import java.util.List;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
@@ -61,10 +62,21 @@ public class MessagesController implements MessagesApi {
   @Override
   public ResponseEntity<Resource> getFiddMessageChunk(
       Long messageNumber, Long offset, Long length) {
-    InputStream chunk = fiddConnectorRestService.getFiddMessageChunk(messageNumber, offset, length);
+    if (offset < 0 || length < 0) {
+      return ResponseEntity.badRequest().build();
+    }
+
+    long messageSize = fiddConnectorRestService.getFiddMessageSize(messageNumber);
+    if (offset > messageSize || (offset == messageSize && length > 0)) {
+      return ResponseEntity.status(HttpStatus.REQUESTED_RANGE_NOT_SATISFIABLE).build();
+    }
+
+    long actualLength = Math.min(length, messageSize - offset);
+    InputStream chunk =
+        fiddConnectorRestService.getFiddMessageChunk(messageNumber, offset, actualLength);
     return ResponseEntity.ok()
         .contentType(MediaType.APPLICATION_OCTET_STREAM)
-        .contentLength(length)
+        .contentLength(actualLength)
         .body(new InputStreamResource(chunk));
   }
 }

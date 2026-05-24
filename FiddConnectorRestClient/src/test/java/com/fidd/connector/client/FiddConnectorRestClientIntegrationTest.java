@@ -43,8 +43,10 @@ class FiddConnectorRestClientIntegrationTest {
   private static final String SECOND_MESSAGE_CONTENT = "second-message-content";
   private static final String THIRD_MESSAGE_CONTENT = "third-message-content";
   private static final String MESSAGE_CHUNK = "message";
+  private static final String MESSAGE_REMAINDER_FROM_CHUNK_OFFSET = "message-content";
   private static final long MESSAGE_CHUNK_OFFSET = 7L;
   private static final long MESSAGE_CHUNK_LENGTH = 7L;
+  private static final long OVERSIZED_MESSAGE_CHUNK_LENGTH = 1_000L;
 
   private static final String PLAIN_KEY_PREFIX = "plain-key-";
   private static final String SUBSCRIBER_FOOTPRINT = "subscriber";
@@ -109,6 +111,12 @@ class FiddConnectorRestClientIntegrationTest {
         client.getFiddMessageChunk(
             SECOND_MESSAGE_NUMBER, MESSAGE_CHUNK_OFFSET, MESSAGE_CHUNK_LENGTH)) {
       assertArrayEquals(MESSAGE_CHUNK.getBytes(UTF_8), chunk.readAllBytes());
+    }
+
+    try (InputStream chunk =
+        client.getFiddMessageChunk(
+            SECOND_MESSAGE_NUMBER, MESSAGE_CHUNK_OFFSET, OVERSIZED_MESSAGE_CHUNK_LENGTH)) {
+      assertArrayEquals(MESSAGE_REMAINDER_FROM_CHUNK_OFFSET.getBytes(UTF_8), chunk.readAllBytes());
     }
   }
 
