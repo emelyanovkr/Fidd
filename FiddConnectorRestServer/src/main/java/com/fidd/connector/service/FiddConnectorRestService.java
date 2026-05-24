@@ -15,6 +15,25 @@ public class FiddConnectorRestService {
     this.fiddConnector = fiddConnector;
   }
 
+  public List<Long> getMessageNumbersTail(int count) {
+    return fiddConnector.getMessageNumbersTail(count);
+  }
+
+  public List<Long> getMessageNumbersBefore(long messageNumber, int count, boolean inclusive) {
+    return fiddConnector.getMessageNumbersBefore(messageNumber, count, inclusive);
+  }
+
+  public List<Long> getMessageNumbersBetween(
+      long latestMessage,
+      boolean inclusiveLatest,
+      long earliestMessage,
+      boolean inclusiveEarliest,
+      int count,
+      boolean getLatest) {
+    return fiddConnector.getMessageNumbersBetween(
+        latestMessage, inclusiveLatest, earliestMessage, inclusiveEarliest, count, getLatest);
+  }
+
   public long getFiddMessageSize(long messageNumber) {
     return fiddConnector.getFiddMessageSize(messageNumber);
   }
