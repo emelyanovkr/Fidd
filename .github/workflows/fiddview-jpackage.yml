@@ -1,0 +1,98 @@
+name: FiddView JPackage
+
+on:
+  push:
+    tags:
+      - '[0-9]+.[0-9]+.[0-9]+'
+  workflow_dispatch:
+
+jobs:
+  build-fiddview-image:
+    name: Build FiddView on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+
+    permissions:
+      contents: write
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            artifact_name: FiddView-${{ github.ref_name }}-portable-linux
+            artifact_path: FiddView/build/jpackage/FiddView
+          - os: windows-latest
+            artifact_name: FiddView-${{ github.ref_name }}-portable-windows
+            artifact_path: FiddView/build/jpackage/FiddView
+          - os: macos-latest
+            artifact_name: FiddView-${{ github.ref_name }}-portable-macos
+            artifact_path: FiddView/build/jpackage/FiddView.app
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.14'
+
+      - name: Build FiddView app image
+        run: gradle :FiddView:jpackageImage
+
+      - name: Archive app image (macOS/Linux)
+        if: runner.os != 'Windows'
+        run: |
+          cd FiddView/build/jpackage
+          if [ "${{ runner.os }}" = "macOS" ]; then
+            zip -r ../../../${{ matrix.artifact_name }}.zip FiddView.app
+          else
+            zip -r ../../../${{ matrix.artifact_name }}.zip FiddView
+          fi
+
+      - name: Archive app image (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          cd FiddView/build/jpackage
+          Compress-Archive -Path FiddView -DestinationPath ..\..\..\${{ matrix.artifact_name }}.zip
+
+      - name: ls-fiddview-zip (Linux/macOS)
+        if: runner.os != 'Windows'
+        run: ls -al ${{ matrix.artifact_name }}.zip
+
+      - name: ls-fiddview-zip (Windows)
+        if: runner.os == 'Windows'
+        run: dir ${{ matrix.artifact_name }}.zip
+
+      - name: sha256-fiddview-zip (Linux)
+        if: runner.os == 'Linux'
+        run: openssl sha256 ${{ matrix.artifact_name }}.zip
+
+      - name: sha256-fiddview-zip (macOS)
+        if: runner.os == 'macOS'
+        run: shasum -a 256 ${{ matrix.artifact_name }}.zip
+
+      - name: sha256-fiddview-zip (Windows)
+        if: runner.os == 'Windows'
+        run: (Get-FileHash ${{ matrix.artifact_name }}.zip -Algorithm SHA256).Hash
+
+      - name: Upload FiddView app image artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact_name }}
+          path: ${{ matrix.artifact_name }}.zip
+          if-no-files-found: error
+
+      - name: Upload to Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ matrix.artifact_name }}.zip

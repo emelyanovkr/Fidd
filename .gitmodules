@@ -12,7 +12,7 @@
 	url = https://github.com/flower-org/FiddContentService.git
 [submodule "FiddConnectorRestServer/src/main/resources/openapi"]
 	path = FiddConnectorRestServer/src/main/resources/openapi
-	url = https://github.com:emelyanovkr/FiddCachingService.git
+	url = https://github.com/flower-org/FiddCachingService
 [submodule "FiddConnectorRestClient/src/main/resources/openapi"]
 	path = FiddConnectorRestClient/src/main/resources/openapi
-	url = https://github.com:emelyanovkr/FiddCachingService.git
+	url = https://github.com/flower-org/FiddCachingService

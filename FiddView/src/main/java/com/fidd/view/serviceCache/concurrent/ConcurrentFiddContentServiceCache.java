@@ -4,6 +4,8 @@ import com.fidd.service.FiddContentService;
 import com.fidd.view.serviceCache.FiddContentServiceCache;
 
 import javax.annotation.Nullable;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -16,6 +18,11 @@ public class ConcurrentFiddContentServiceCache implements FiddContentServiceCach
 
     public @Nullable FiddContentService getService(String serviceName) {
         return serviceMap.get(serviceName);
+    }
+
+    @Override
+    public List<String> getServiceIds() {
+        return new ArrayList<>(serviceMap.keySet());
     }
 
     public boolean addServiceIfAbsent(String serviceName, FiddContentService service) {
