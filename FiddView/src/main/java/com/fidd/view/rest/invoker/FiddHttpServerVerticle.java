@@ -51,14 +51,14 @@ public class FiddHttpServerVerticle extends AbstractVerticle {
 
               Router router = builder.createRouter();
               // Custom router for file download
-              router.routeWithRegex("/([^/]+)/([^/]+)/(.+)")
+              router.routeWithRegex("/fidds/v1/([^/]+)/([^/]+)/(.+)")
                   .handler(rc -> {
                       String fullPath = rc.request().path().substring(1); // remove leading slash
-                      String[] parts = fullPath.split("/", 3);
+                      String[] parts = fullPath.split("/", 5);
 
-                      String fiddId = parts[0];
-                      Long messageNumber = Long.valueOf(parts[1]);
-                      String logicalFilePath = parts[2]; // includes slashes
+                      String fiddId = parts[2];
+                      Long messageNumber = Long.valueOf(parts[3]);
+                      String logicalFilePath = parts[4]; // includes slashes
 
                       // Build RequestParameters so your handler receives them normally
                       RequestParametersImpl params = new RequestParametersImpl();
@@ -84,7 +84,7 @@ public class FiddHttpServerVerticle extends AbstractVerticle {
             .compose(router ->
                 vertx.createHttpServer()
                     .requestHandler(router)
-                    .listen(8080)
+                    .listen(4199)
             )
             .onSuccess(server -> logger.info("Http verticle deploy successful"))
             .onFailure(t -> logger.error("Http verticle failed to deploy", t))
