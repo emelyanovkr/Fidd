@@ -43,27 +43,8 @@ public class LogicalFileUtil {
                 baseRepositories.encryptionAlgorithmRepo().get(section.encryptionAlgorithm());
         byte[] keyData = section.encryptionKeyData() == null ? new byte[0] : section.encryptionKeyData();
 
-        InputStream logicalFileStream =
-                checkNotNull(encryptionAlgorithm).getDecryptedStream(keyData,
-                             fiddConnector.getFiddMessageChunk(messageNumber, section.sectionOffset(),
-                                     section.sectionLength()));
-        skipAll(logicalFileStream, fileOffset);
-
-        return logicalFileStream;
-    }
-
-    public static void skipAll(InputStream stream, long n) throws IOException {
-        long remaining = n;
-        while (remaining > 0) {
-            long skipped = stream.skip(remaining);
-            if (skipped <= 0) {
-                // If skip() returns 0, try reading and discarding one byte
-                if (stream.read() == -1) {
-                    throw new EOFException("Reached end of stream before skipping " + n + " bytes");
-                }
-                skipped = 1;
-            }
-            remaining -= skipped;
-        }
+        return checkNotNull(encryptionAlgorithm).getDecryptedStream(keyData,
+                     fiddConnector.getFiddMessageChunk(messageNumber, section.sectionOffset(),
+                             section.sectionLength()));
     }
 }

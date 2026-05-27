@@ -10,7 +10,10 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 public class LogicalFileInfoMapperTest {
 
@@ -48,7 +51,6 @@ public class LogicalFileInfoMapperTest {
         FiddKey.Section section = com.fidd.core.fiddkey.ImmutableSection.builder()
                 .sectionOffset(1000L)
                 .sectionLength(250L)
-                .headerLength(16)
                 .encryptionAlgorithm("AES-256-GCM")
                 .encryptionKeyData(new byte[]{10, 11, 12})
                 .crcs(List.of(sectionCrc))
@@ -189,7 +191,6 @@ public class LogicalFileInfoMapperTest {
         FiddKey.Section section = com.fidd.core.fiddkey.ImmutableSection.builder()
                 .sectionOffset(2000L)
                 .sectionLength(400L)
-                .headerLength(32)
                 .encryptionAlgorithm("AES-256-GCM")
                 .encryptionKeyData(new byte[]{10, 11, 12})
                 .crcs(List.of(FiddSignature.of("sha256", new byte[]{4, 5, 6})))

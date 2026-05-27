@@ -8,10 +8,23 @@ import com.fidd.core.fiddkey.FiddKey;
 import org.junit.jupiter.api.Test;
 import org.mockito.InOrder;
 
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.EOFException;
+import java.io.InputStream;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static com.fidd.core.common.StreamUtils.skipAll;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 public class LogicalFileUtilTest {
 
@@ -24,7 +37,7 @@ public class LogicalFileUtilTest {
         byte[] data = new byte[10];
         ByteArrayInputStream stream = new ByteArrayInputStream(data);
 
-        LogicalFileUtil.skipAll(stream, 5);
+        skipAll(stream, 5);
 
         assertEquals(5, stream.readAllBytes().length); // now at index 5
     }
@@ -36,7 +49,7 @@ public class LogicalFileUtilTest {
         // Force skip() to always return 0
         doReturn(0L).when(stream).skip(anyLong());
 
-        LogicalFileUtil.skipAll(stream, 2);
+        skipAll(stream, 2);
 
         // Verify fallback read() was used
         verify(stream, atLeastOnce()).read();
@@ -47,7 +60,7 @@ public class LogicalFileUtilTest {
         InputStream stream = new ByteArrayInputStream(new byte[]{1,2});
 
         assertThrows(EOFException.class, () ->
-                LogicalFileUtil.skipAll(stream, 5)
+                skipAll(stream, 5)
         );
     }
 

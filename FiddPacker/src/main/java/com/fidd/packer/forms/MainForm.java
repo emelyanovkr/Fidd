@@ -707,7 +707,8 @@ public class MainForm {
                     addProgressiveCrcs,
                     minProgressiveCrcFileSize,
                     ONE_MEBIBYTE,
-                    List.of(progressiveCrcCalculator)
+                    List.of(progressiveCrcCalculator),
+                    true // TODO: parameterize from UI
             );
 
             formMessageNumber(packedContentDirectoryRoot);

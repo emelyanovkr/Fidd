@@ -116,7 +116,7 @@ public class WrapperFiddContentService implements FiddContentService {
             List<LogicalFileInfo> logicalFileInfo = new ArrayList<>();
             for (int i = 0; i < fiddKey.logicalFiles().size(); i++) {
                 LOGGER.info("Getting LogicalFileMetadata for Section #" + (i+1) + " (Logical File #" + i + ")");
-                FiddKey.Section logicalFileSection = fiddKey.logicalFiles().get(i);
+                FiddKey.SectionWithHeader logicalFileSection = fiddKey.logicalFiles().get(i);
                 Pair<LogicalFileMetadata, MetadataContainerSerializer.MetadataContainerAndLength> logicalFileMetadataAndContainer =
                      LogicalFileMetadataUtil.getLogicalFileMetadata(baseRepositories,
                             fiddConnector, true, messageNumber,

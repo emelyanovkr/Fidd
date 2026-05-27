@@ -17,8 +17,17 @@ import org.junit.jupiter.api.Test;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class LogicalFileMetadataUtilTest {
 
@@ -32,9 +41,9 @@ public class LogicalFileMetadataUtilTest {
         LogicalFileMetadataSerializer metadataSerializer = mock(LogicalFileMetadataSerializer.class);
 
         // Section
-        FiddKey.Section section = mock(FiddKey.Section.class);
-        when(section.sectionOffset()).thenReturn(0L);
-        when(section.sectionLength()).thenReturn(10L);
+        FiddKey.SectionWithHeader section = mock(FiddKey.SectionWithHeader.class);
+        when(section.headerOffset()).thenReturn(0);
+        when(section.headerLength()).thenReturn(10);
         when(section.encryptionAlgorithm()).thenReturn("AES");
         when(section.encryptionKeyData()).thenReturn(new byte[]{1, 2, 3});
 
@@ -97,9 +106,9 @@ public class LogicalFileMetadataUtilTest {
         EncryptionAlgorithm encryption = mock(EncryptionAlgorithm.class);
         MetadataContainerSerializer containerSerializer = mock(MetadataContainerSerializer.class);
 
-        FiddKey.Section section = mock(FiddKey.Section.class);
-        when(section.sectionOffset()).thenReturn(0L);
-        when(section.sectionLength()).thenReturn(10000L);
+        FiddKey.SectionWithHeader section = mock(FiddKey.SectionWithHeader.class);
+        when(section.headerOffset()).thenReturn(0);
+        when(section.headerLength()).thenReturn(10000);
         when(section.encryptionAlgorithm()).thenReturn("AES");
         when(section.encryptionKeyData()).thenReturn(new byte[]{1});
 
@@ -154,7 +163,7 @@ public class LogicalFileMetadataUtilTest {
     void testGetLogicalFileMetadata_unsupportedEncryptionAlgorithm() {
         BaseRepositories repos = mock(BaseRepositories.class);
         FiddConnector connector = mock(FiddConnector.class);
-        FiddKey.Section section = mock(FiddKey.Section.class);
+        FiddKey.SectionWithHeader section = mock(FiddKey.SectionWithHeader.class);
 
         when(section.encryptionAlgorithm()).thenReturn("BAD");
         Repository<EncryptionAlgorithm> encryptionAlgorithmRepo = mock(Repository.class);
@@ -175,9 +184,9 @@ public class LogicalFileMetadataUtilTest {
         EncryptionAlgorithm encryption = mock(EncryptionAlgorithm.class);
         MetadataContainerSerializer containerSerializer = mock(MetadataContainerSerializer.class);
 
-        FiddKey.Section section = mock(FiddKey.Section.class);
-        when(section.sectionOffset()).thenReturn(0L);
-        when(section.sectionLength()).thenReturn(5L);
+        FiddKey.SectionWithHeader section = mock(FiddKey.SectionWithHeader.class);
+        when(section.headerOffset()).thenReturn(0);
+        when(section.headerLength()).thenReturn(5);
         when(section.encryptionAlgorithm()).thenReturn("AES");
         when(section.encryptionKeyData()).thenReturn(new byte[]{1});
 

@@ -29,7 +29,7 @@ public class LogicalFileMetadataUtil {
 
     public static @Nullable Pair<LogicalFileMetadata, MetadataContainerSerializer.MetadataContainerAndLength>
     getLogicalFileMetadata(BaseRepositories baseRepositories, FiddConnector fiddConnector, boolean tryCache, long messageNumber,
-                           FiddKey.Section logicalFileSection) throws IOException {
+                           FiddKey.SectionWithHeader logicalFileSection) throws IOException {
         String encryptionAlgorithmName = logicalFileSection.encryptionAlgorithm();
         EncryptionAlgorithm encryptionAlgorithm = baseRepositories.encryptionAlgorithmRepo().get(encryptionAlgorithmName);
         if (encryptionAlgorithm == null) {
@@ -46,27 +46,27 @@ public class LogicalFileMetadataUtil {
     public static @Nullable Pair<LogicalFileMetadata, MetadataContainerSerializer.MetadataContainerAndLength>
     getLogicalFileMetadata(BaseRepositories baseRepositories,
                            EncryptionAlgorithm encryptionAlgorithm, FiddConnector fiddConnector, boolean tryCache,
-                           long messageNumber, FiddKey.Section logicalFileSection,
+                           long messageNumber, FiddKey.SectionWithHeader logicalFileSection,
                            MetadataContainerSerializer metadataContainerSerializer,
                            boolean throwOnValidationFailure) throws IOException {
         MetadataContainerSerializer.MetadataContainerAndLength metadataContainerAndLength = null;
-        InputStream sectionInputStream;
+        InputStream sectionHeaderInputStream;
         Integer headerLength = logicalFileSection.headerLength();
         if (fiddConnector instanceof FiddCacheConnector && headerLength != null) {
-            sectionInputStream = ((FiddCacheConnector)fiddConnector).getFiddMessageChunk(messageNumber,
-                logicalFileSection.sectionOffset(), headerLength, tryCache);
+            sectionHeaderInputStream = ((FiddCacheConnector)fiddConnector).getFiddMessageChunk(messageNumber,
+                logicalFileSection.headerOffset(), headerLength, tryCache);
         } else {
-            sectionInputStream = fiddConnector.getFiddMessageChunk(messageNumber,
-                    logicalFileSection.sectionOffset(), headerLength != null ? headerLength : logicalFileSection.sectionLength());
+            sectionHeaderInputStream = fiddConnector.getFiddMessageChunk(messageNumber,
+                    logicalFileSection.headerOffset(), headerLength != null ? headerLength : logicalFileSection.sectionLength());
         }
 
-        try (sectionInputStream) {
+        try (sectionHeaderInputStream) {
             byte[] cumul = new byte[0];
-            int bufferSize = (int)Math.min(4096L, logicalFileSection.sectionLength());
+            int bufferSize = (int)Math.min(4096L, logicalFileSection.headerLength());
             byte[] buffer = new byte[bufferSize];
             int totalRead = 0;
-            while (totalRead < logicalFileSection.sectionLength()) {
-                int bytesRead = sectionInputStream.read(buffer);
+            while (totalRead < logicalFileSection.headerLength()) {
+                int bytesRead = sectionHeaderInputStream.read(buffer);
                 if (bytesRead == 0) { continue; }
                 if (bytesRead == -1) {
                     warnAndMaybeThrow("Failed to read metadata", throwOnValidationFailure);

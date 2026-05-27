@@ -25,7 +25,6 @@ import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.io.ByteArrayInputStream;
-import java.io.EOFException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -199,7 +198,6 @@ public class FiddUnpackManager {
                     progressCallback, true);
         }
 
-
         if (!validateFiddFileAndFiddKey) {
             progressCallback.warn("6. Validating Fidd file signatures not requested, omitting");
             progressCallback.warn("7. Validating Fidd.Key file signatures not requested, omitting");
@@ -219,7 +217,7 @@ public class FiddUnpackManager {
         progressCallback.log("8. Loading and Materializing Logical Files");
 
         for (int i = 0; i < fiddKey.logicalFiles().size(); i++) {
-            FiddKey.Section logicalFileSection = fiddKey.logicalFiles().get(i);
+            FiddKey.SectionWithHeader logicalFileSection = fiddKey.logicalFiles().get(i);
             validateAndMaterializeLogicalFile(i, baseRepositories, fiddConnector, messageNumber, logicalFileSection,
                     METADATA_CONTAINER_SERIALIZER_FORMAT, outputFolder, progressCallback, currentCert, throwOnValidationFailure,
                     validateLogicalFileMetadatas, validateLogicalFiles, true);
@@ -228,7 +226,7 @@ public class FiddUnpackManager {
 
     private static void validateAndMaterializeLogicalFile(int logicalFileIndex, BaseRepositories baseRepositories,
                                                           FiddConnector fiddConnector,
-                                                          long messageNumber, FiddKey.Section logicalFileSection,
+                                                          long messageNumber, FiddKey.SectionWithHeader logicalFileSection,
                                                           String metadataContainerSerializerFormat,
                                                           File outputFolder, ProgressCallback progressCallback,
                                                           @Nullable X509Certificate publicKey,
@@ -282,8 +280,6 @@ public class FiddUnpackManager {
                                         encryptionAlgorithm.getDecryptedStream(logicalFileSection.encryptionKeyData(),
                                             fiddConnector.getFiddMessageChunk(messageNumber, logicalFileSection.sectionOffset(),
                                                  logicalFileSection.sectionLength()))) {
-                                skipAll(logicalFileStream, logicalFileMetadataLengthBytes);
-
                                 try (InputStream signatureStream = new ByteArrayInputStream(authorsFileSignature.bytes())) {
                                     validateFileSignature(i, logicalFileName, null,
                                             logicalFileStream, signatureStream,
@@ -305,8 +301,6 @@ public class FiddUnpackManager {
                                          encryptionAlgorithm.getDecryptedStream(logicalFileSection.encryptionKeyData(),
                                                  fiddConnector.getFiddMessageChunk(messageNumber, logicalFileSection.sectionOffset(),
                                                          logicalFileSection.sectionLength()))) {
-                                skipAll(logicalFileStream, logicalFileMetadataLengthBytes);
-
                                 try (InputStream progressiveCrcStream = new ByteArrayInputStream(progressiveCrc.bytes())) {
                                     validateFileProgressiveCrc(i, logicalFileName,
                                             logicalFileStream, progressiveCrcStream, progressiveCrc.progressiveCrcChunkSize(),
@@ -345,21 +339,6 @@ public class FiddUnpackManager {
             while ((bytesRead = logicalFileStream.read(buffer)) != -1) {
                 out.write(buffer, 0, bytesRead);
             }
-        }
-    }
-
-    public static void skipAll(InputStream stream, long n) throws IOException {
-        long remaining = n;
-        while (remaining > 0) {
-            long skipped = stream.skip(remaining);
-            if (skipped <= 0) {
-                // If skip() returns 0, try reading and discarding one byte
-                if (stream.read() == -1) {
-                    throw new EOFException("Reached end of stream before skipping " + n + " bytes");
-                }
-                skipped = 1;
-            }
-            remaining -= skipped;
         }
     }
 
