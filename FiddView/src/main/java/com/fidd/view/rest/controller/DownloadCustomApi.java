@@ -102,7 +102,7 @@ public class DownloadCustomApi implements DownloadApi {
             if (encryptionAlgorithm == null) {
                 return Future.failedFuture(new HttpException(501));
             }
-            long fileLength = checkNotNull(encryptionAlgorithm).plaintextLengthToCiphertextLength(fileLengthEncrypted);
+            long fileLength = checkNotNull(encryptionAlgorithm).ciphertextLengthToPlaintextLength(fileLengthEncrypted);
 
             boolean headersGotRange = !StringUtils.isBlank(range);
             if (!headersGotRange) {
