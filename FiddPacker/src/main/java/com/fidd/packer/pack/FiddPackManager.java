@@ -202,10 +202,10 @@ public class FiddPackManager {
             sectionDescriptors = rearrangeSections(sectionDescriptors, minGapSize, maxGapSize, randomGenerator.generator(), alignAllMetadatas);
 
             for (SectionDescriptor sectionDescriptor : sectionDescriptors) {
-                if (sectionDescriptor instanceof LogicalFileSectionDescriptor) {
-                    // 3.2.1.2 Add gap before LogicalFile Section
-                    position += appendGap(outputStream, minGapSize, maxGapSize, randomGenerator.generator());
+                // Add gap before Section
+                position += appendGap(outputStream, sectionDescriptor.getGapBefore(), randomGenerator.generator());
 
+                if (sectionDescriptor instanceof LogicalFileSectionDescriptor) {
                     // 3.2.1.1 Encrypt and add LogicalFile
                     FilePathTuple file = ((LogicalFileSectionDescriptor)sectionDescriptor).filePathTuple;
 
@@ -222,9 +222,6 @@ public class FiddPackManager {
                     position += logicalFileSectionLengthAndCrc.length();
                     file.setLogicalFileSectionLengthAndCrc(logicalFileSectionLengthAndCrc);
                 } else if (sectionDescriptor instanceof LogicalFileMetadataHeaderSectionDescriptor) {
-                    // 3.2.1.2 Add gap before LogicalFile Section
-                    position += appendGap(outputStream, minGapSize, maxGapSize, randomGenerator.generator());
-
                     // 3.2.1.1 Encrypt and add LogicalFile Metadata Header
                     FilePathTuple file = ((LogicalFileMetadataHeaderSectionDescriptor)sectionDescriptor).filePathTuple;
 
@@ -245,9 +242,6 @@ public class FiddPackManager {
                     position += logicalFileMetadataSectionLengthAndCrc.length();
                     file.setLogicalFileMetadataSectionLengthAndCrc(logicalFileMetadataSectionLengthAndCrc);
                 } else if (sectionDescriptor instanceof FiddFileMetadataSectionDescriptor) {
-                    // 3.2.2.3 Add gap after FiddFile Metadata Section
-                    position += appendGap(outputStream, minGapSize, maxGapSize, randomGenerator.generator());
-
                     // 3.2.2.1 Encrypt and add FiddFileMetadata
                     byte[] fiddFileMetadataSectionKey = encryptionAlgorithm.generateNewKeyData(randomGenerator);
 
@@ -271,7 +265,8 @@ public class FiddPackManager {
             }
 
             // 3.3. Append last gap
-            appendGap(outputStream, minGapSize, maxGapSize, randomGenerator.generator());
+            final long lastGapSize = randomLongBetween(minGapSize, maxGapSize, randomGenerator.generator());
+            appendGap(outputStream, lastGapSize, randomGenerator.generator());
         }
 
         // 4. Form FiddKey file
@@ -411,9 +406,8 @@ public class FiddPackManager {
         return minGapSize + randomGenerator.nextLong(maxGapSize - minGapSize + 1);
     }
 
-    public static long appendGap(OutputStream outputChannelStream, long minGapSize, long maxGapSize, RandomGenerator randomGenerator) throws IOException {
-        if (maxGapSize == 0) { return 0; }
-        final long gapSize = randomLongBetween(minGapSize, maxGapSize, randomGenerator);
+    public static long appendGap(OutputStream outputChannelStream, long gapSize, RandomGenerator randomGenerator) throws IOException {
+        if (gapSize == 0) { return 0; }
         final int bufferSize = IO_BUFFER_SIZE;
 
         ByteBuffer buffer = ByteBuffer.allocate(bufferSize);
