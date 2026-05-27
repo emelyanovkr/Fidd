@@ -15,7 +15,7 @@ public class SectionArranger {
                                                             boolean alignAllMetadatas
                                                             ) {
         if (!alignAllMetadatas) {
-            Collections.shuffle(sectionList);
+            FiddPackManager.shuffle(sectionList, randomGenerator);
             for (SectionDescriptor sectionDescriptor : sectionList) {
                 final long gapSize = randomLongBetween(minGapSize, maxGapSize, randomGenerator);
                 sectionDescriptor.setGapBefore(gapSize);
