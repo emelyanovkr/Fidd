@@ -127,7 +127,6 @@ public class FiddPackManager {
                                 boolean addFiddFileMetadataSignature,
                                 boolean addLogicalFileSignatures,
                                 boolean addLogicalFileMetadataSignatures,
-                                boolean addLogicalFileHeaderLengthToFiddKey,
 
                                 boolean includePublicKey,
                                 PublicKeySerializer publicKeySerializer,
