@@ -66,11 +66,9 @@ public class LogicalFileInfoMapperTest {
         assertNotNull(dto);
         assertNotNull(dto.getMetadata());
         assertEquals("/path/to/file.txt", dto.getMetadata().getFilePath());
-        assertEquals(Long.valueOf(42L), dto.getFileOffset());
         assertNotNull(dto.getSection());
         assertEquals(Long.valueOf(1000L), dto.getSection().getSectionOffset());
         assertEquals(Long.valueOf(250L), dto.getSection().getSectionLength());
-        assertEquals(Integer.valueOf(16), dto.getSection().getHeaderLength());
         assertEquals("AES-256-GCM", dto.getSection().getEncryptionAlgorithm());
         assertArrayEquals(new byte[]{10, 11, 12}, dto.getSection().getEncryptionKeyData());
         assertNotNull(dto.getSection().getCrcs());
@@ -128,9 +126,7 @@ public class LogicalFileInfoMapperTest {
 
         assertEquals(2, list.size());
         assertEquals("/a", list.get(0).getMetadata().getFilePath());
-        assertEquals(Long.valueOf(10L), list.get(0).getFileOffset());
         assertEquals("/b", list.get(1).getMetadata().getFilePath());
-        assertEquals(Long.valueOf(20L), list.get(1).getFileOffset());
     }
 
     @Test
@@ -220,7 +216,6 @@ public class LogicalFileInfoMapperTest {
         assertNotNull(dto.getSection());
         assertEquals(Long.valueOf(2000L), dto.getSection().getSectionOffset());
         assertEquals(Long.valueOf(400L), dto.getSection().getSectionLength());
-        assertEquals(Integer.valueOf(32), dto.getSection().getHeaderLength());
     }
 
     private static com.fidd.core.logicalfile.LogicalFileMetadata.ExternalResource.FileRegion buildRegion(

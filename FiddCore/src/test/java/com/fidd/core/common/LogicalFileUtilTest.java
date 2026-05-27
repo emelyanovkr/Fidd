@@ -69,7 +69,7 @@ public class LogicalFileUtilTest {
     // ------------------------------------------------------------
 
     @Test
-    void getLogicalFileInputStream_returnsDecryptedStreamAtCorrectOffset() throws Exception {
+    void getLogicalFileInputStream_returnsDecryptedStream() throws Exception {
         // Mocks
         BaseRepositories repos = mock(BaseRepositories.class);
         Repository encRepo = mock(Repository.class);
@@ -96,12 +96,12 @@ public class LogicalFileUtilTest {
 
         // Act
         InputStream result = LogicalFileUtil.getLogicalFileInputStream(
-                repos, connector, 42L, section//, 2L
+                repos, connector, 42L, section
         );
 
-        // Assert: stream should now be positioned after skipping 2 bytes
-        assertEquals(9, result.read());
-        assertEquals(10, result.read());
+        // Assert: stream should read from beginning
+        assertEquals(7, result.read());
+        assertEquals(8, result.read());
 
         // Verify correct call order
         InOrder order = inOrder(connector, algorithm);
