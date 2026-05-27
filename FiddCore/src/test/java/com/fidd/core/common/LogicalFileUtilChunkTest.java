@@ -31,7 +31,7 @@ public class LogicalFileUtilChunkTest {
 
         assertThrows(InvalidAlgorithmParameterException.class, () ->
                 LogicalFileUtil.getLogicalFileInputStreamChunk(
-                        repos, connector, 1L, section, 0L, 0L, 10L
+                        repos, connector, 1L, section, 0L, 10L
                 )
         );
     }
@@ -72,7 +72,7 @@ public class LogicalFileUtilChunkTest {
         // Act
         InputStream result = LogicalFileUtil.getLogicalFileInputStreamChunk(
                 repos, connector, 77L, section,
-                50L,     // fileOffset
+                //50L,     // fileOffset
                 200L,    // dataOffset
                 20L      // dataLength
         );
@@ -118,7 +118,8 @@ public class LogicalFileUtilChunkTest {
 
         LogicalFileUtil.getLogicalFileInputStreamChunk(
                 repos, connector, 5L, section,
-                0L, 0L, 1L
+                //0L,
+                0L, 1L
         );
 
         verify(algorithm).getRandomAccessDecryptedStream(

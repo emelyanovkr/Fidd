@@ -35,10 +35,9 @@ public class BlobsMetadataContainerSerializer implements MetadataContainerSerial
     }
 
     @Override
-    public MetadataContainerAndLength deserialize(byte[] metadataBytes) throws NotEnoughBytesException {
+    public MetadataContainer deserialize(byte[] metadataBytes) throws NotEnoughBytesException {
         final Pair<Long, List<byte[]>> unpacked = BlobsPacker.unpackBlobs(metadataBytes);
 
-        final long lengthBytes = unpacked.getLeft();
         final List<byte[]> parts = unpacked.getRight();
 
         byte[] metadataFormat = parts.get(parts.size()-2);
@@ -51,13 +50,11 @@ public class BlobsMetadataContainerSerializer implements MetadataContainerSerial
             signatures.add(FiddSignature.of(new String(signatureFormat, StandardCharsets.UTF_8), signature));
         }
 
-        MetadataContainer metadataContainer = ImmutableMetadataContainer.builder()
+        return ImmutableMetadataContainer.builder()
                 .metadataFormat(new String(metadataFormat, StandardCharsets.UTF_8))
                 .metadata(metadata)
                 .signatures(signatures)
                 .build();
-
-        return MetadataContainerAndLength.of(lengthBytes, metadataContainer);
     }
 
     @Override

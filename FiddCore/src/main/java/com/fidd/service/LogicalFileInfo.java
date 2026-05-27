@@ -14,13 +14,11 @@ import org.immutables.value.Value;
 public interface LogicalFileInfo {
     LogicalFileMetadata metadata();
     FiddKey.Section section();
-    long fileOffset();
 
-    static LogicalFileInfo of(LogicalFileMetadata metadata, FiddKey.Section section, long fileOffset) {
+    static LogicalFileInfo of(LogicalFileMetadata metadata, FiddKey.Section section) {
         return ImmutableLogicalFileInfo.builder()
                 .metadata(metadata)
                 .section(section)
-                .fileOffset(fileOffset)
                 .build();
     }
 }

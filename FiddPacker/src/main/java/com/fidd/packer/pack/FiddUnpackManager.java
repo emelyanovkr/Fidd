@@ -247,7 +247,7 @@ public class FiddUnpackManager {
             progressCallback.log("8.2 Loading LogicalFileMetadata for Section #" + (logicalFileIndex+1) + " (Logical File #" + logicalFileIndex + ")");
 
             LOGGER.info("Getting LogicalFileMetadata for Section #" + (logicalFileIndex+1) + " (Logical File #" + logicalFileIndex + ")");
-            Pair<LogicalFileMetadata, MetadataContainerSerializer.MetadataContainerAndLength> pair =
+            Pair<LogicalFileMetadata, MetadataContainer> pair =
                 LogicalFileMetadataUtil.getLogicalFileMetadata(baseRepositories, encryptionAlgorithm, fiddConnector, false, messageNumber,
                         logicalFileSection, metadataContainerSerializer, throwOnValidationFailure);
 
@@ -256,14 +256,13 @@ public class FiddUnpackManager {
                     progressCallback.warn("8.3 Validating LogicalFileMetadata signatures not requested, omitting");
                 } else {
                     progressCallback.log("8.3 Validating LogicalFileMetadata for Section #" + (logicalFileIndex+1) + " (Logical File #" + logicalFileIndex + ")");
-                    validateMetadataContainer(baseRepositories, pair.getRight().metadataContainer(), progressCallback,
+                    validateMetadataContainer(baseRepositories, pair.getRight(), progressCallback,
                             publicKey, throwOnValidationFailure);
                 }
 
                 LogicalFileMetadata logicalFileMetadata = pair.getLeft();
                 String logicalFileName = logicalFileMetadata.filePath();
 
-                long logicalFileMetadataLengthBytes = pair.getRight().lengthBytes();
                 if (!validateLogicalFiles) {
                     progressCallback.warn("8.4 Validating LogicalFiles not requested, omitting");
                 } else {
@@ -319,7 +318,7 @@ public class FiddUnpackManager {
                             "\" for Section #" + (logicalFileIndex+1) + " (Logical File #" + logicalFileIndex + ")");
 
                     try (InputStream logicalFileStream = getLogicalFileInputStream(baseRepositories, fiddConnector,
-                                         messageNumber, logicalFileSection, logicalFileMetadataLengthBytes)) {
+                                         messageNumber, logicalFileSection)) {
                         File outputFile = new File(outputFolder, logicalFileMetadata.filePath());
                         // Create containing directories if needed
                         outputFile.getParentFile().mkdirs();

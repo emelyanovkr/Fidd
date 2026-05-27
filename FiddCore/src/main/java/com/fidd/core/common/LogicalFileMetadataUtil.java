@@ -7,6 +7,7 @@ import com.fidd.core.encryption.EncryptionAlgorithm;
 import com.fidd.core.fiddkey.FiddKey;
 import com.fidd.core.logicalfile.LogicalFileMetadata;
 import com.fidd.core.logicalfile.LogicalFileMetadataSerializer;
+import com.fidd.core.metadata.MetadataContainer;
 import com.fidd.core.metadata.MetadataContainerSerializer;
 import com.fidd.core.metadata.NotEnoughBytesException;
 import org.apache.commons.lang3.tuple.Pair;
@@ -27,7 +28,7 @@ public class LogicalFileMetadataUtil {
     // TODO: hardcoding this to "BLOBS" for now
     final static String METADATA_CONTAINER_SERIALIZER_FORMAT = "BLOBS";
 
-    public static @Nullable Pair<LogicalFileMetadata, MetadataContainerSerializer.MetadataContainerAndLength>
+    public static @Nullable Pair<LogicalFileMetadata, MetadataContainer>
     getLogicalFileMetadata(BaseRepositories baseRepositories, FiddConnector fiddConnector, boolean tryCache, long messageNumber,
                            FiddKey.SectionWithHeader logicalFileSection) throws IOException {
         String encryptionAlgorithmName = logicalFileSection.encryptionAlgorithm();
@@ -43,13 +44,13 @@ public class LogicalFileMetadataUtil {
                 messageNumber, logicalFileSection, metadataContainerSerializer, true);
     }
 
-    public static @Nullable Pair<LogicalFileMetadata, MetadataContainerSerializer.MetadataContainerAndLength>
+    public static @Nullable Pair<LogicalFileMetadata, MetadataContainer>
     getLogicalFileMetadata(BaseRepositories baseRepositories,
                            EncryptionAlgorithm encryptionAlgorithm, FiddConnector fiddConnector, boolean tryCache,
                            long messageNumber, FiddKey.SectionWithHeader logicalFileSection,
                            MetadataContainerSerializer metadataContainerSerializer,
                            boolean throwOnValidationFailure) throws IOException {
-        MetadataContainerSerializer.MetadataContainerAndLength metadataContainerAndLength = null;
+        MetadataContainer metadataContainerAndLength = null;
         InputStream sectionHeaderInputStream;
         Integer headerLength = logicalFileSection.headerLength();
         if (fiddConnector instanceof FiddCacheConnector && headerLength != null) {
@@ -97,7 +98,7 @@ public class LogicalFileMetadataUtil {
             }
         }
 
-        String logicalFileMetadataFormat = checkNotNull(metadataContainerAndLength).metadataContainer().metadataFormat();
+        String logicalFileMetadataFormat = checkNotNull(metadataContainerAndLength).metadataFormat();
         LogicalFileMetadataSerializer logicalFileMetadataSerializer =
                 baseRepositories.logicalFileMetadataFormatRepo().get(logicalFileMetadataFormat);
         if (logicalFileMetadataSerializer == null) {
@@ -106,7 +107,7 @@ public class LogicalFileMetadataUtil {
             return null;
         } else {
             LogicalFileMetadata logicalFileMetadata =
-                    logicalFileMetadataSerializer.deserialize(metadataContainerAndLength.metadataContainer().metadata());
+                    logicalFileMetadataSerializer.deserialize(metadataContainerAndLength.metadata());
             return Pair.of(logicalFileMetadata, metadataContainerAndLength);
         }
     }

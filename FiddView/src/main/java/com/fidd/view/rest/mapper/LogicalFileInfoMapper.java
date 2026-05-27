@@ -49,7 +49,6 @@ public class LogicalFileInfoMapper {
                             if (ctx.getSource() == null) { return null; }
                             com.fidd.service.LogicalFileInfo src = ctx.getSource();
                             LogicalFileInfo dst = new LogicalFileInfo();
-                            dst.setFileOffset(src.fileOffset());
                             dst.setMetadata(MODEL_MAPPER.map(src.metadata(), LogicalFileMetadata.class));
                             dst.setSection(MODEL_MAPPER.map(src.section(), FiddKeySection.class));
                             return dst;

@@ -97,7 +97,7 @@ public class DownloadCustomApi implements DownloadApi {
                 return Future.failedFuture(new HttpException(404));
             }
 
-            long fileLengthEncrypted = logicalFileInfo.section().sectionLength() - logicalFileInfo.fileOffset();
+            long fileLengthEncrypted = logicalFileInfo.section().sectionLength();
             EncryptionAlgorithm encryptionAlgorithm = baseRepositories.encryptionAlgorithmRepo().get(logicalFileInfo.section().encryptionAlgorithm());
             if (encryptionAlgorithm == null) {
                 return Future.failedFuture(new HttpException(501));

@@ -57,7 +57,7 @@ public class LogicalFileInfoMapperTest {
                 .build();
 
         // Arrange source LogicalFileInfo
-        LogicalFileInfo source = com.fidd.service.LogicalFileInfo.of(metadata, section, 42L);
+        LogicalFileInfo source = com.fidd.service.LogicalFileInfo.of(metadata, section/*, 42L*/);
 
         // Act
         com.fidd.view.rest.model.LogicalFileInfo dto = LogicalFileInfoMapper.toDto(source);
@@ -112,7 +112,7 @@ public class LogicalFileInfoMapperTest {
                 .sectionOffset(1L)
                 .sectionLength(2L)
                 .build();
-        LogicalFileInfo s1 = com.fidd.service.LogicalFileInfo.of(metadata1, section1, 10L);
+        LogicalFileInfo s1 = com.fidd.service.LogicalFileInfo.of(metadata1, section1/*, 10L*/);
 
         LogicalFileMetadata metadata2 = com.fidd.core.logicalfile.ImmutableLogicalFileMetadata.builder()
                 .updateType(LogicalFileMetadata.FiddUpdateType.DELETE)
@@ -122,7 +122,7 @@ public class LogicalFileInfoMapperTest {
                 .sectionOffset(3L)
                 .sectionLength(4L)
                 .build();
-        LogicalFileInfo s2 = com.fidd.service.LogicalFileInfo.of(metadata2, section2, 20L);
+        LogicalFileInfo s2 = com.fidd.service.LogicalFileInfo.of(metadata2, section2/*, 20L*/);
 
         List<com.fidd.view.rest.model.LogicalFileInfo> list = LogicalFileInfoMapper.toDtoList(List.of(s1, s2));
 
@@ -143,7 +143,7 @@ public class LogicalFileInfoMapperTest {
                 .sectionOffset(0L)
                 .sectionLength(0L)
                 .build();
-        LogicalFileInfo source = com.fidd.service.LogicalFileInfo.of(metadata, section, 0L);
+        LogicalFileInfo source = com.fidd.service.LogicalFileInfo.of(metadata, section/*, 0L*/);
 
         com.fidd.view.rest.model.LogicalFileInfo dto = LogicalFileInfoMapper.toDto(source);
         assertNull(dto.getMetadata().getAuthorsFileSignatures());
@@ -196,7 +196,7 @@ public class LogicalFileInfoMapperTest {
                 .crcs(List.of(FiddSignature.of("sha256", new byte[]{4, 5, 6})))
                 .build();
 
-        LogicalFileInfo source = com.fidd.service.LogicalFileInfo.of(metadata, section, 99L);
+        LogicalFileInfo source = com.fidd.service.LogicalFileInfo.of(metadata, section/*, 99L*/);
 
         com.fidd.view.rest.model.LogicalFileInfo dto = LogicalFileInfoMapper.toDto(source);
 

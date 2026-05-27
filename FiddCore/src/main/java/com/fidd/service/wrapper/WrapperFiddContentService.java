@@ -117,14 +117,13 @@ public class WrapperFiddContentService implements FiddContentService {
             for (int i = 0; i < fiddKey.logicalFiles().size(); i++) {
                 LOGGER.info("Getting LogicalFileMetadata for Section #" + (i+1) + " (Logical File #" + i + ")");
                 FiddKey.SectionWithHeader logicalFileSection = fiddKey.logicalFiles().get(i);
-                Pair<LogicalFileMetadata, MetadataContainerSerializer.MetadataContainerAndLength> logicalFileMetadataAndContainer =
+                Pair<LogicalFileMetadata, MetadataContainer> logicalFileMetadataAndContainer =
                      LogicalFileMetadataUtil.getLogicalFileMetadata(baseRepositories,
                             fiddConnector, true, messageNumber,
                             logicalFileSection);
 
                 logicalFileInfo.add(LogicalFileInfo.of(checkNotNull(logicalFileMetadataAndContainer).getLeft(),
-                        logicalFileSection,
-                        logicalFileMetadataAndContainer.getRight().lengthBytes()
+                        logicalFileSection
                     ));
             }
 
@@ -139,7 +138,7 @@ public class WrapperFiddContentService implements FiddContentService {
         try {
             LOGGER.info("Getting LogicalFile " + messageNumber + " / " + LogicalFileInfo.metadata().filePath());
             return getLogicalFileInputStream(baseRepositories, fiddConnector,
-                    messageNumber, LogicalFileInfo.section(), LogicalFileInfo.fileOffset());
+                    messageNumber, LogicalFileInfo.section());
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -151,7 +150,7 @@ public class WrapperFiddContentService implements FiddContentService {
             LOGGER.info("Getting LogicalFileChunk " + messageNumber + " / " + LogicalFileInfo.metadata().filePath() +
                     " from: " + offset + " size: " + length);
             return getLogicalFileInputStreamChunk(baseRepositories, fiddConnector,
-                    messageNumber, LogicalFileInfo.section(), LogicalFileInfo.fileOffset(), offset, length);
+                    messageNumber, LogicalFileInfo.section(), offset, length);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

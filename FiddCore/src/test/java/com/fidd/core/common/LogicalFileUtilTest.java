@@ -96,7 +96,7 @@ public class LogicalFileUtilTest {
 
         // Act
         InputStream result = LogicalFileUtil.getLogicalFileInputStream(
-                repos, connector, 42L, section, 2L
+                repos, connector, 42L, section//, 2L
         );
 
         // Assert: stream should now be positioned after skipping 2 bytes
@@ -131,7 +131,7 @@ public class LogicalFileUtilTest {
         InputStream decrypted = new ByteArrayInputStream(new byte[]{1});
         when(algorithm.getDecryptedStream(any(), any())).thenReturn(decrypted);
 
-        LogicalFileUtil.getLogicalFileInputStream(repos, connector, 1L, section, 0L);
+        LogicalFileUtil.getLogicalFileInputStream(repos, connector, 1L, section);
 
         verify(algorithm).getDecryptedStream(eq(new byte[0]), any());
     }

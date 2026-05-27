@@ -35,8 +35,8 @@ public class SectionArranger {
                 }
             }
 
-            Collections.shuffle(fileList);
-            Collections.shuffle(metadataList);
+            FiddPackManager.shuffle(fileList, randomGenerator);
+            FiddPackManager.shuffle(metadataList, randomGenerator);
 
             // Random position in the file for contiguous Metadata Sections block
             int metadataSectionPosition = randomGenerator.nextInt(fileList.size()+1);
