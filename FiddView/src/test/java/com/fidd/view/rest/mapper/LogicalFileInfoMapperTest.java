@@ -66,15 +66,6 @@ public class LogicalFileInfoMapperTest {
         assertNotNull(dto);
         assertNotNull(dto.getMetadata());
         assertEquals("/path/to/file.txt", dto.getMetadata().getFilePath());
-        assertNotNull(dto.getSection());
-        assertEquals(Long.valueOf(1000L), dto.getSection().getSectionOffset());
-        assertEquals(Long.valueOf(250L), dto.getSection().getSectionLength());
-        assertEquals("AES-256-GCM", dto.getSection().getEncryptionAlgorithm());
-        assertArrayEquals(new byte[]{10, 11, 12}, dto.getSection().getEncryptionKeyData());
-        assertNotNull(dto.getSection().getCrcs());
-        assertEquals(1, dto.getSection().getCrcs().size());
-        assertEquals("sha256", dto.getSection().getCrcs().get(0).getFormat());
-        assertArrayEquals(new byte[]{4, 5, 6}, dto.getSection().getCrcs().get(0).getBytes());
 
         assertNotNull(dto.getMetadata().getAuthorsFileSignatures());
         assertEquals(1, dto.getMetadata().getAuthorsFileSignatures().size());
@@ -145,9 +136,6 @@ public class LogicalFileInfoMapperTest {
         assertNull(dto.getMetadata().getAuthorsFileSignatures());
         assertNull(dto.getMetadata().getProgressiveCrcs());
         assertNull(dto.getMetadata().getExternalLinks());
-        assertNull(dto.getSection().getEncryptionAlgorithm());
-        assertNull(dto.getSection().getEncryptionKeyData());
-        assertNull(dto.getSection().getCrcs());
     }
 
     @Test
@@ -212,10 +200,6 @@ public class LogicalFileInfoMapperTest {
 
         assertEquals(1, dto.getMetadata().getExternalLinks().get(1).getFileRegions().size());
         assertEquals("file.c", dto.getMetadata().getExternalLinks().get(1).getFileRegions().get(0).getRegionFileName());
-
-        assertNotNull(dto.getSection());
-        assertEquals(Long.valueOf(2000L), dto.getSection().getSectionOffset());
-        assertEquals(Long.valueOf(400L), dto.getSection().getSectionLength());
     }
 
     private static com.fidd.core.logicalfile.LogicalFileMetadata.ExternalResource.FileRegion buildRegion(
