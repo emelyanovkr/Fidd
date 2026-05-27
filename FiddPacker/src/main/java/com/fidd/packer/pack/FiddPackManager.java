@@ -13,6 +13,7 @@ import com.fidd.core.fiddkey.FiddKey;
 import com.fidd.core.fiddkey.FiddKeySerializer;
 import com.fidd.core.fiddkey.ImmutableFiddKey;
 import com.fidd.core.fiddkey.ImmutableSection;
+import com.fidd.core.fiddkey.ImmutableSectionWithHeader;
 import com.fidd.core.logicalfile.ImmutableLogicalFileMetadata;
 import com.fidd.core.logicalfile.LogicalFileMetadata;
 import com.fidd.core.logicalfile.LogicalFileMetadataSerializer;
@@ -48,6 +49,7 @@ import static com.fidd.connectors.folder.FolderFiddConstants.DEFAULT_FIDD_SIGNAT
 import static com.fidd.connectors.folder.FolderFiddConstants.FIDD_KEY_FILE_NAME;
 import static com.fidd.connectors.folder.FolderFiddConstants.FIDD_MESSAGE_FILE_NAME;
 import static com.fidd.packer.pack.DirectoryReader.getDirectoryContents;
+import static com.fidd.packer.pack.SectionArranger.rearrangeSections;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 public class FiddPackManager {
@@ -97,6 +99,12 @@ public class FiddPackManager {
         return fiddFileMetadataBuilder.build();
     }
 
+    /**
+     * Pack new Fidd post
+     *
+     * @param alignAllMetadatas - make sure all Metadatas Sections are aligned contiguously in the file
+     *                          for ease of reading them all in a single go as a contiguous chunk
+     */
     public static void fiddPackNewPost(File originalDirectory,
                                 File packedContentDirectory,
                                 @Nullable X509Certificate authorsPublicKey,
@@ -119,7 +127,6 @@ public class FiddPackManager {
                                 boolean addFiddFileMetadataSignature,
                                 boolean addLogicalFileSignatures,
                                 boolean addLogicalFileMetadataSignatures,
-                                boolean addLogicalFileHeaderLengthToFiddKey,
 
                                 boolean includePublicKey,
                                 PublicKeySerializer publicKeySerializer,
@@ -131,11 +138,12 @@ public class FiddPackManager {
                                 boolean addProgressiveCrcs,
                                 long minProgressiveCrcFileSize,
                                 long progressiveCrcChunkSize,
-                                List<CrcCalculator> progressiveCrcCalculators
+                                List<CrcCalculator> progressiveCrcCalculators,
+
+                                boolean alignAllMetadatas
     ) throws IOException {
         // Fidd Key parts will be populated as we go
         FiddKey.Section fiddFileMetadataSection = null;
-        List<FiddKey.Section> logicalFilesSections = new ArrayList<>();
 
         // 0. Sanity checks
         if (minGapSize > maxGapSize) {
@@ -175,76 +183,109 @@ public class FiddPackManager {
         );
 
         // 3. Form FiddFile
+        List<FilePathTuple> filePathTuples = getDirectoryContents(originalDirectory);
+
         try (FileChannel outputChannel = FileChannel.open(fiddFile.toPath(), StandardOpenOption.CREATE, StandardOpenOption.WRITE)) {
             OutputStream outputStream = Channels.newOutputStream(outputChannel);
             long position = 0;
 
-            // 3.1. Add first gap
-            position += appendGap(outputStream, minGapSize, maxGapSize, randomGenerator.generator());
-
             // 3.2. Process all content directory files
-            List<FilePathTuple> files = getDirectoryContents(originalDirectory);
-            shuffle(files, randomGenerator.generator());
+            // Form SectionDescriptors
+            List<SectionDescriptor> sectionDescriptors = new ArrayList<>();
+            sectionDescriptors.add(new FiddFileMetadataSectionDescriptor(fiddFileMetadata));
+            for (FilePathTuple filePathTuple : filePathTuples) {
+                sectionDescriptors.add(new LogicalFileSectionDescriptor(filePathTuple));
+                sectionDescriptors.add(new LogicalFileMetadataHeaderSectionDescriptor(filePathTuple));
+            }
 
-            // Random position in the file for FiddFile Metadata Section
-            int fiddFileMetadataSectionPosition = randomGenerator.generator().nextInt(files.size()+1);
+            // Establish the structure of Fidd File
+            sectionDescriptors = rearrangeSections(sectionDescriptors, minGapSize, maxGapSize, randomGenerator.generator(), alignAllMetadatas);
 
-            for (int i = -1; i < files.toArray().length; i++) {
-                // 3.2.1 Write Logical file
-                if (i != -1) {
+            for (SectionDescriptor sectionDescriptor : sectionDescriptors) {
+                // Add gap before Section
+                position += appendGap(outputStream, sectionDescriptor.getGapBefore(), randomGenerator.generator());
+
+                if (sectionDescriptor instanceof LogicalFileSectionDescriptor) {
                     // 3.2.1.1 Encrypt and add LogicalFile
-                    FilePathTuple file = files.get(i);
-                    long logicalFileSectionOffset = position;
-                    byte[] logicalFileSectionKey = encryptionAlgorithm.generateNewKeyData(randomGenerator);
+                    FilePathTuple file = ((LogicalFileSectionDescriptor)sectionDescriptor).filePathTuple;
+
+                    byte[] logicalFileSectionKey = file.getLogicalFileSectionKey();
+                    if (logicalFileSectionKey == null) {
+                        logicalFileSectionKey = encryptionAlgorithm.generateNewKeyData(randomGenerator);
+                        file.setLogicalFileSectionKey(logicalFileSectionKey);
+                    }
 
                     LengthAndCrcs logicalFileSectionLengthAndCrc =
-                            addLogicalFileWithMetadata(originalDirectory, file.file(),
+                            addLogicalFile(position, file.file(),
+                                    outputStream, encryptionAlgorithm, logicalFileSectionKey,
+                                    addCrcsToFiddKey, crcCalculators);
+                    position += logicalFileSectionLengthAndCrc.length();
+                    file.setLogicalFileSectionLengthAndCrc(logicalFileSectionLengthAndCrc);
+                } else if (sectionDescriptor instanceof LogicalFileMetadataHeaderSectionDescriptor) {
+                    // 3.2.1.1 Encrypt and add LogicalFile Metadata Header
+                    FilePathTuple file = ((LogicalFileMetadataHeaderSectionDescriptor)sectionDescriptor).filePathTuple;
+
+                    byte[] logicalFileSectionKey = file.getLogicalFileSectionKey();
+                    if (logicalFileSectionKey == null) {
+                        logicalFileSectionKey = encryptionAlgorithm.generateNewKeyData(randomGenerator);
+                        file.setLogicalFileSectionKey(logicalFileSectionKey);
+                    }
+
+                    LengthAndCrcs logicalFileMetadataSectionLengthAndCrc =
+                            addLogicalFileMetadata(position, originalDirectory, file.file(),
                                     outputStream, encryptionAlgorithm, logicalFileSectionKey,
                                     metadataContainerSerializer, logicalFileMetadataSerializer,
                                     addLogicalFileSignatures, addLogicalFileMetadataSignatures,
                                     signerCheckers, authorsPrivateKey,
                                     addCrcsToFiddKey, crcCalculators,
                                     addProgressiveCrcs, minProgressiveCrcFileSize, progressiveCrcChunkSize, progressiveCrcCalculators);
-                    position += logicalFileSectionLengthAndCrc.length();
-
-                    // 3.2.2.2 Form corresponding Section descriptor for FiddKey
-                    FiddKey.Section logicalFileSection = createFiddKeySection(logicalFileSectionOffset,
-                            position - logicalFileSectionOffset, encryptionAlgorithm,
-                            logicalFileSectionKey, addCrcsToFiddKey,
-                            crcCalculators, logicalFileSectionLengthAndCrc.crcs(), addLogicalFileHeaderLengthToFiddKey,
-                            logicalFileSectionLengthAndCrc.headerLength());
-                    logicalFilesSections.add(logicalFileSection);
-
-                    // 3.2.1.2 Add gap after LogicalFile Section
-                    position += appendGap(outputStream, minGapSize, maxGapSize, randomGenerator.generator());
-                }
-
-                // 3.2.2 If we're at the right position, also write FiddFile Metadata
-                if ((i+1) == fiddFileMetadataSectionPosition) {
+                    position += logicalFileMetadataSectionLengthAndCrc.length();
+                    file.setLogicalFileMetadataSectionLengthAndCrc(logicalFileMetadataSectionLengthAndCrc);
+                } else if (sectionDescriptor instanceof FiddFileMetadataSectionDescriptor) {
                     // 3.2.2.1 Encrypt and add FiddFileMetadata
-                    long fiddFileMetadataSectionOffset = position;
                     byte[] fiddFileMetadataSectionKey = encryptionAlgorithm.generateNewKeyData(randomGenerator);
 
                     LengthAndCrcs fiddFileMetadataSectionLengthAndCrc =
-                            addFiddFileMetadata(outputStream, fiddFileMetadata, fiddFileMetadataSerializer,
+                            addFiddFileMetadata(position, outputStream, fiddFileMetadata, fiddFileMetadataSerializer,
                                     metadataContainerSerializer,
                                     encryptionAlgorithm, fiddFileMetadataSectionKey, crcCalculators, addCrcsToFiddKey,
                                     addFiddFileMetadataSignature, authorsPrivateKey, signerCheckers);
-                    position += fiddFileMetadataSectionLengthAndCrc.length();
+                    long length = fiddFileMetadataSectionLengthAndCrc.length();
 
                     // 3.2.2.2 Form corresponding Section descriptor for FiddKey
-                    fiddFileMetadataSection = createFiddKeySection(fiddFileMetadataSectionOffset,
-                            position - fiddFileMetadataSectionOffset, encryptionAlgorithm,
+                    fiddFileMetadataSection = createFiddKeySection(position,
+                            length, encryptionAlgorithm,
                             fiddFileMetadataSectionKey, addCrcsToFiddKey,
-                            crcCalculators, fiddFileMetadataSectionLengthAndCrc.crcs(), false, null);
+                            crcCalculators, fiddFileMetadataSectionLengthAndCrc.crcs());
 
-                    // 3.2.2.3 Add gap after FiddFile Metadata Section
-                    position += appendGap(outputStream, minGapSize, maxGapSize, randomGenerator.generator());
+                    position = position + length;
+                } else {
+                    throw new RuntimeException("Unknown SectionDescriptor type " + sectionDescriptor.getClass());
                 }
             }
+
+            // 3.3. Append last gap
+            final long lastGapSize = randomLongBetween(minGapSize, maxGapSize, randomGenerator.generator());
+            appendGap(outputStream, lastGapSize, randomGenerator.generator());
         }
 
         // 4. Form FiddKey file
+        List<FiddKey.SectionWithHeader> logicalFilesSections = new ArrayList<>();
+
+        for (FilePathTuple filePathTuple : filePathTuples) {
+            // 3.2.2.2 Form corresponding Section descriptor for FiddKey
+            LengthAndCrcs section = checkNotNull(filePathTuple.getLogicalFileSectionLengthAndCrc());
+            LengthAndCrcs header = checkNotNull(filePathTuple.getLogicalFileMetadataSectionLengthAndCrc());
+
+            FiddKey.SectionWithHeader logicalFileSection = createFiddKeySectionWithHeader(
+                    encryptionAlgorithm, filePathTuple.getLogicalFileSectionKey(),
+                    addCrcsToFiddKey,
+                    crcCalculators,
+                    section.offset(), section.length(), section.crcs(),
+                    header.offset(), (int)header.length(), header.crcs());
+            logicalFilesSections.add(logicalFileSection);
+        }
+
         ImmutableFiddKey.Builder fiddKeyBuilder = ImmutableFiddKey.builder();
         shuffle(logicalFilesSections, randomGenerator.generator());
         fiddKeyBuilder.fiddFileMetadata(checkNotNull(fiddFileMetadataSection))
@@ -281,8 +322,7 @@ public class FiddPackManager {
     public static FiddKey.Section createFiddKeySection(long sectionOffset, long sectionLength,
                                                        EncryptionAlgorithm encryptionAlgorithm, byte[] sectionKey,
                                                        boolean addCrcsToFiddKey, List<CrcCalculator> crcCalculators,
-                                                       @Nullable List<byte[]> crcs,
-                                                       boolean addHeaderLengthToSection, @Nullable Integer headerLength
+                                                       @Nullable List<byte[]> crcs
                                                        ) {
         ImmutableSection.Builder sectionBuilder = ImmutableSection.builder()
                 .sectionOffset(sectionOffset)
@@ -306,10 +346,50 @@ public class FiddPackManager {
             sectionBuilder.crcs(crcList);
         }
 
-        if (addHeaderLengthToSection) {
-            if (headerLength != null) {
-                sectionBuilder.headerLength(headerLength);
+        return sectionBuilder.build();
+    }
+
+    public static FiddKey.SectionWithHeader createFiddKeySectionWithHeader(
+                                                       EncryptionAlgorithm encryptionAlgorithm, @Nullable byte[] sectionKey,
+                                                       boolean addCrcsToFiddKey, List<CrcCalculator> crcCalculators,
+
+                                                       long sectionOffset, long sectionLength,
+                                                       @Nullable List<byte[]> sectionCrcs,
+                                                       long headerOffset, int headerLength,
+                                                       @Nullable List<byte[]> headerCrcs
+    ) {
+        ImmutableSectionWithHeader.Builder sectionBuilder = ImmutableSectionWithHeader.builder();
+
+        // If encryption algorithm is not specified it means the data is unencrypted
+        if (!encryptionAlgorithm.name().equals(EncryptionAlgorithm.UNENCRYPTED)) {
+            sectionBuilder
+                    .encryptionAlgorithm(encryptionAlgorithm.name())
+                    .encryptionKeyData(sectionKey);
+        }
+
+        sectionBuilder
+                .sectionOffset(sectionOffset)
+                .sectionLength(sectionLength);
+
+        sectionBuilder
+                .headerOffset(headerOffset)
+                .headerLength(headerLength);
+
+        if (addCrcsToFiddKey) {
+            List<FiddSignature> sectionCrcList = new ArrayList<>();
+            List<FiddSignature> headerCrcList = new ArrayList<>();
+            for (int i = 0; i < crcCalculators.size(); i++) {
+                CrcCalculator crcCalculator = crcCalculators.get(i);
+
+                byte[] sectionCrc = checkNotNull(sectionCrcs).get(i);
+                sectionCrcList.add(FiddSignature.of(crcCalculator.name(), sectionCrc));
+
+                byte[] headerCrc = checkNotNull(headerCrcs).get(i);
+                headerCrcList.add(FiddSignature.of(crcCalculator.name(), headerCrc));
             }
+
+            sectionBuilder.crcs(sectionCrcList);
+            sectionBuilder.headerCrcs(headerCrcList);
         }
 
         return sectionBuilder.build();
@@ -326,9 +406,8 @@ public class FiddPackManager {
         return minGapSize + randomGenerator.nextLong(maxGapSize - minGapSize + 1);
     }
 
-    public static long appendGap(OutputStream outputChannelStream, long minGapSize, long maxGapSize, RandomGenerator randomGenerator) throws IOException {
-        if (maxGapSize == 0) { return 0; }
-        final long gapSize = randomLongBetween(minGapSize, maxGapSize, randomGenerator);
+    public static long appendGap(OutputStream outputChannelStream, long gapSize, RandomGenerator randomGenerator) throws IOException {
+        if (gapSize == 0) { return 0; }
         final int bufferSize = IO_BUFFER_SIZE;
 
         ByteBuffer buffer = ByteBuffer.allocate(bufferSize);
@@ -353,22 +432,55 @@ public class FiddPackManager {
         return gapSize;
     }
 
-    private static LengthAndCrcs addLogicalFileWithMetadata(File originalDirectory, File inputFile, OutputStream outputFileStream,
+    private static LengthAndCrcs addLogicalFile(long position, File inputFile, OutputStream mainOutputFileStream,
                                                             EncryptionAlgorithm encryptionAlgorithm, byte[] keyData,
-                                                            MetadataContainerSerializer metadataContainerSerializer,
-                                                            LogicalFileMetadataSerializer logicalFileMetadataSerializer,
-                                                            boolean addLogicalFileSignatures,
-                                                            boolean addLogicalFileMetadataSignatures,
-                                                            List<SignerChecker> signerCheckers,
-                                                            @Nullable PrivateKey authorsPrivateKey,
                                                             boolean addCrcsToFiddKey,
-                                                            List<CrcCalculator> crcCalculators,
-
-                                                            boolean addProgressiveCrcs,
-                                                            long minProgressiveCrcFileSize,
-                                                            long progressiveCrcChunkSize,
-                                                            List<CrcCalculator> progressiveCrcCalculators
+                                                            List<CrcCalculator> crcCalculators
                                                    ) throws IOException {
+        // 3. Append MetadataContainer and File to Fidd File (output file)
+        List<EncryptionAlgorithm.CrcCallback> crcCallbacks = null;
+        if (addCrcsToFiddKey) {
+            crcCallbacks = new ArrayList<>();
+            for (CrcCalculator crcCalculator : crcCalculators) {
+                crcCallbacks.add(crcCalculator.newCrcCallback());
+            }
+        }
+
+        long length;
+        try (FileChannel inputChannel = FileChannel.open(inputFile.toPath(), StandardOpenOption.READ)) {
+            InputStream inputFileStream = Channels.newInputStream(inputChannel);
+            length = encryptionAlgorithm.encrypt(keyData,
+                    List.of(inputFileStream), mainOutputFileStream, crcCallbacks);
+        }
+
+        List<byte[]> crcs = null;
+        if (addCrcsToFiddKey) {
+            crcs = new ArrayList<>();
+            for (EncryptionAlgorithm.CrcCallback crcCallback : checkNotNull(crcCallbacks)) {
+                byte[] crc = crcCallback.getCrc();
+                crcs.add(crc);
+            }
+        }
+
+        return LengthAndCrcs.of(position, length, crcs);
+    }
+
+    private static LengthAndCrcs addLogicalFileMetadata(long position, File originalDirectory, File inputFile, OutputStream outputFileStream,
+                                                                            EncryptionAlgorithm encryptionAlgorithm, byte[] keyData,
+                                                                            MetadataContainerSerializer metadataContainerSerializer,
+                                                                            LogicalFileMetadataSerializer logicalFileMetadataSerializer,
+                                                                            boolean addLogicalFileSignatures,
+                                                                            boolean addLogicalFileMetadataSignatures,
+                                                                            List<SignerChecker> signerCheckers,
+                                                                            @Nullable PrivateKey authorsPrivateKey,
+                                                                            boolean addCrcsToFiddKey,
+                                                                            List<CrcCalculator> crcCalculators,
+
+                                                                            boolean addProgressiveCrcs,
+                                                                            long minProgressiveCrcFileSize,
+                                                                            long progressiveCrcChunkSize,
+                                                                            List<CrcCalculator> progressiveCrcCalculators
+    ) throws IOException {
         // 1. Form Logical file metadata
         LogicalFileMetadata logicalFileMetadata;
         {
@@ -377,7 +489,7 @@ public class FiddPackManager {
             Path relativePath = originalDirectory.toPath().relativize(inputFile.toPath());
             logicalFileMetadataBuilder
                     .updateType(LogicalFileMetadata.FiddUpdateType.CREATE_OVERRIDE)
-                    .filePath(relativePath.toString());//TODO: test relative path correctness
+                    .filePath(relativePath.toString());
 
             Long createdAt = createdAt(inputFile);
             Long updatedAt = updatedAt(inputFile);
@@ -388,6 +500,7 @@ public class FiddPackManager {
                 logicalFileMetadataBuilder.updatedAt(updatedAt);
             }
 
+            // TODO: Ideally we'd like to read through each file only once, including the pass in addLogicalFile()
             if (addLogicalFileSignatures) {
                 for (SignerChecker signerChecker : signerCheckers) {
                     List<FiddSignature> signatures = new ArrayList<>();
@@ -402,6 +515,7 @@ public class FiddPackManager {
                 }
             }
 
+            // TODO: Ideally we'd like to read through each file only once, including the pass in addLogicalFile()
             if (addProgressiveCrcs && inputFile.length() >= minProgressiveCrcFileSize) {
                 List<ProgressiveCrc> progressiveCrcs = new ArrayList<>();
                 for (CrcCalculator progressiveCrcCalculator : checkNotNull(progressiveCrcCalculators)) {
@@ -451,12 +565,8 @@ public class FiddPackManager {
             }
         }
 
-        long length;
-        try (FileChannel inputChannel = FileChannel.open(inputFile.toPath(), StandardOpenOption.READ)) {
-            InputStream inputFileStream = Channels.newInputStream(inputChannel);
-            length = encryptionAlgorithm.encrypt(keyData,
-                    List.of(new ByteArrayInputStream(metadataContainerBytes), inputFileStream), outputFileStream, crcCallbacks);
-        }
+        long length = encryptionAlgorithm.encrypt(keyData,
+                    List.of(new ByteArrayInputStream(metadataContainerBytes)), outputFileStream, crcCallbacks);
 
         List<byte[]> crcs = null;
         if (addCrcsToFiddKey) {
@@ -467,7 +577,7 @@ public class FiddPackManager {
             }
         }
 
-        return LengthAndCrcs.of(length, crcs, metadataContainerBytes.length);
+        return LengthAndCrcs.of(position, length, crcs);
     }
 
     @Nullable
@@ -487,7 +597,7 @@ public class FiddPackManager {
         return lastModified == 0 ? null : lastModified;
     }
 
-    private static LengthAndCrcs addFiddFileMetadata(OutputStream outputStream, FiddFileMetadata fiddFileMetadata,
+    private static LengthAndCrcs addFiddFileMetadata(long position, OutputStream outputStream, FiddFileMetadata fiddFileMetadata,
                                                      FiddFileMetadataSerializer fiddFileMetadataSerializer,
                                                      MetadataContainerSerializer metadataContainerSerializer,
                                                      EncryptionAlgorithm encryptionAlgorithm,
@@ -540,6 +650,6 @@ public class FiddPackManager {
         // 5. Write Metadata Section to Fidd File
         outputStream.write(encryptedFiddFileMetadataSectionBytes);
 
-        return LengthAndCrcs.of(encryptedFiddFileMetadataSectionBytes.length, crcs);
+        return LengthAndCrcs.of(position, encryptedFiddFileMetadataSectionBytes.length, crcs);
     }
 }

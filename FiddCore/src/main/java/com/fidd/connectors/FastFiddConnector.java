@@ -1,41 +1,40 @@
 package com.fidd.connectors;
 
-import javax.annotation.Nullable;
 import java.io.InputStream;
 import java.util.List;
 
-public interface FastFiddConnector {
-    interface MessageNumberAndLength {
-        long messageNumber();
-        long messageLength();
-    }
-
-    interface PageResult<T> {
-        List<T> items();
-        int page();
-        int pageSize();
-        boolean last();
-    }
-
+public interface FastFiddConnector extends FiddConnector {
     interface Chunk {
         long offset();
         long length();
     }
 
-    /** Descending order */
-    List<MessageNumberAndLength> getMessageNumbersTail(int count);
-    /** Descending order */
-    List<MessageNumberAndLength> getMessageNumbersBefore(long messageNumber, int count, boolean inclusive);
-    /** Descending order */
-    List<MessageNumberAndLength> getMessageNumbersBetween(long latestMessage, boolean inclusiveLatest,
-                                                          long earliestMessage, boolean inclusiveEarliest, int count, boolean getLatest);
-
-    PageResult<byte[]> listFiddKeys(long messageNumber, byte[] footprint, int page);//Size according to the connector
-    @Nullable byte[] getUnencryptedFiddKey(long messageNumber);
-
-    PageResult<byte[]> getFiddKeySignatures(long messageNumber, int index, int page);
-    PageResult<byte[]> getFiddMessageSignatures(long messageNumber, int index, int page);
-
-    /** Concatenated */
+    /** Chunk bytes Concatenated in return Input Stream */
     InputStream getFiddMessageChunks(long messageNumber, List<Chunk> chunks);
+
+    // TODO: Use case for length? This is not the "right" length anyway, it's message file size
+    //  true length can only be calculated from FiddKey
+    //interface MessageNumberAndLength {
+    //    long messageNumber();
+    //    long messageLength();
+    //}
+    /** Descending order */
+    //List<MessageNumberAndLength> getMessageNumbersWithLengthsTail(int count);
+    /** Descending order */
+    //List<MessageNumberAndLength> getMessageNumbersWithLengthsBefore(long messageNumber, int count, boolean inclusive);
+    /** Descending order */
+    //List<MessageNumberAndLength> getMessageNumbersWithLengthsBetween(long latestMessage, boolean inclusiveLatest,
+    //                                                      long earliestMessage, boolean inclusiveEarliest, int count, boolean getLatest);
+
+    // TODO: Use case
+    //interface PageResult<T> {
+    //    List<T> items();
+    //    int page();
+    //    int pageSize();
+    //    boolean last();
+    //}
+    //PageResult<byte[]> listFiddKeys(long messageNumber, byte[] footprint, int page);//Size according to the connector
+
+    //PageResult<byte[]> getFiddKeySignatures(long messageNumber, int index, int page);
+    //PageResult<byte[]> getFiddMessageSignatures(long messageNumber, int index, int page);
 }

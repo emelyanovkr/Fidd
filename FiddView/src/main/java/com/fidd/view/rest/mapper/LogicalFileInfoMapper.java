@@ -3,7 +3,6 @@ package com.fidd.view.rest.mapper;
 import com.fidd.view.rest.model.FileRegion;
 import com.fidd.view.rest.model.LogicalFileInfo;
 import com.fidd.view.rest.model.LogicalFileMetadata;
-import com.fidd.view.rest.model.FiddKeySection;
 import org.modelmapper.ModelMapper;
 
 import java.util.List;
@@ -22,9 +21,6 @@ public class LogicalFileInfoMapper {
 
         MODEL_MAPPER.createTypeMap(com.fidd.core.logicalfile.LogicalFileMetadata.class, LogicalFileMetadata.class);
         MODEL_MAPPER.createTypeMap(com.fidd.core.logicalfile.ImmutableLogicalFileMetadata.class, LogicalFileMetadata.class);
-
-        MODEL_MAPPER.createTypeMap(com.fidd.core.fiddkey.FiddKey.Section.class, FiddKeySection.class);
-        MODEL_MAPPER.createTypeMap(com.fidd.core.fiddkey.ImmutableSection.class, FiddKeySection.class);
 
         // Nested logical metadata lists
         MODEL_MAPPER.createTypeMap(com.fidd.core.common.FiddSignature.class, com.fidd.view.rest.model.FiddSignature.class);
@@ -49,9 +45,7 @@ public class LogicalFileInfoMapper {
                             if (ctx.getSource() == null) { return null; }
                             com.fidd.service.LogicalFileInfo src = ctx.getSource();
                             LogicalFileInfo dst = new LogicalFileInfo();
-                            dst.setFileOffset(src.fileOffset());
                             dst.setMetadata(MODEL_MAPPER.map(src.metadata(), LogicalFileMetadata.class));
-                            dst.setSection(MODEL_MAPPER.map(src.section(), FiddKeySection.class));
                             return dst;
                         }
                 );

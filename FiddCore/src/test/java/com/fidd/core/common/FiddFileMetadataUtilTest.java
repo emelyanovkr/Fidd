@@ -48,9 +48,6 @@ public class FiddFileMetadataUtilTest {
         when(metadataContainer.metadataFormat()).thenReturn("metaFmt");
         when(metadataContainer.metadata()).thenReturn(metadataBytes);
 
-        MetadataContainerSerializer.MetadataContainerAndLength containerAndLength =
-                MetadataContainerSerializer.MetadataContainerAndLength.of(metadataBytes.length, metadataContainer);
-
         FiddFileMetadata fiddFileMetadata = mock(FiddFileMetadata.class);
 
         when(section.sectionOffset()).thenReturn(0L);
@@ -71,7 +68,7 @@ public class FiddFileMetadataUtilTest {
                 .thenReturn(decryptedBytes);
 
         when(metadataContainerSerializer.deserialize(decryptedBytes))
-                .thenReturn(containerAndLength);
+                .thenReturn(metadataContainer);
 
         when(baseRepositories.fiddFileMetadataFormatRepo().get("metaFmt"))
                 .thenReturn(fiddFileMetadataSerializer);
@@ -99,9 +96,6 @@ public class FiddFileMetadataUtilTest {
         when(metadataContainer.metadataFormat()).thenReturn("fmt");
         when(metadataContainer.metadata()).thenReturn(metadataBytes);
 
-        MetadataContainerSerializer.MetadataContainerAndLength containerAndLength =
-                MetadataContainerSerializer.MetadataContainerAndLength.of(metadataBytes.length, metadataContainer);
-
         FiddFileMetadata fiddFileMetadata = mock(FiddFileMetadata.class);
 
         when(section.sectionOffset()).thenReturn(0L);
@@ -122,7 +116,7 @@ public class FiddFileMetadataUtilTest {
                 .thenReturn(rawBytes);
 
         when(metadataContainerSerializer.deserialize(rawBytes))
-                .thenReturn(containerAndLength);
+                .thenReturn(metadataContainer);
 
         when(baseRepositories.fiddFileMetadataFormatRepo().get("fmt"))
                 .thenReturn(fiddFileMetadataSerializer);
@@ -175,9 +169,6 @@ public class FiddFileMetadataUtilTest {
         MetadataContainer metadataContainer = mock(MetadataContainer.class);
         when(metadataContainer.metadataFormat()).thenReturn("fmt");
 
-        MetadataContainerSerializer.MetadataContainerAndLength containerAndLength =
-                MetadataContainerSerializer.MetadataContainerAndLength.of(bytes.length, metadataContainer);
-
         when(baseRepositories.metadataContainerFormatRepo().get("json"))
                 .thenReturn(metadataContainerSerializer);
 
@@ -193,7 +184,7 @@ public class FiddFileMetadataUtilTest {
                 .thenReturn(encryptionAlgorithm);
 
         when(metadataContainerSerializer.deserialize(bytes))
-                .thenReturn(containerAndLength);
+                .thenReturn(metadataContainer);
 
         when(baseRepositories.fiddFileMetadataFormatRepo().get("fmt"))
                 .thenReturn(null);

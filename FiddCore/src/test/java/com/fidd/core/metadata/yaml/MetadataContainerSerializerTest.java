@@ -43,10 +43,10 @@ public class MetadataContainerSerializerTest {
         assertNotNull(resultBytes);
         assertFalse(StringUtils.isBlank(yamlString));
 
-        MetadataContainerSerializer.MetadataContainerAndLength resultMetadataContainer = serializer.deserialize(resultBytes);
+        MetadataContainer resultMetadataContainer = serializer.deserialize(resultBytes);
         assertNotNull(resultMetadataContainer);
 
-        assertEquals(metadataContainer, resultMetadataContainer.metadataContainer());
+        assertEquals(metadataContainer, resultMetadataContainer);
     }
 
     @ParameterizedTest

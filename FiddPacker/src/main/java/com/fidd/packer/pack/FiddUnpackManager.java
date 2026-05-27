@@ -25,7 +25,6 @@ import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.io.ByteArrayInputStream;
-import java.io.EOFException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -199,7 +198,6 @@ public class FiddUnpackManager {
                     progressCallback, true);
         }
 
-
         if (!validateFiddFileAndFiddKey) {
             progressCallback.warn("6. Validating Fidd file signatures not requested, omitting");
             progressCallback.warn("7. Validating Fidd.Key file signatures not requested, omitting");
@@ -219,7 +217,7 @@ public class FiddUnpackManager {
         progressCallback.log("8. Loading and Materializing Logical Files");
 
         for (int i = 0; i < fiddKey.logicalFiles().size(); i++) {
-            FiddKey.Section logicalFileSection = fiddKey.logicalFiles().get(i);
+            FiddKey.SectionWithHeader logicalFileSection = fiddKey.logicalFiles().get(i);
             validateAndMaterializeLogicalFile(i, baseRepositories, fiddConnector, messageNumber, logicalFileSection,
                     METADATA_CONTAINER_SERIALIZER_FORMAT, outputFolder, progressCallback, currentCert, throwOnValidationFailure,
                     validateLogicalFileMetadatas, validateLogicalFiles, true);
@@ -228,7 +226,7 @@ public class FiddUnpackManager {
 
     private static void validateAndMaterializeLogicalFile(int logicalFileIndex, BaseRepositories baseRepositories,
                                                           FiddConnector fiddConnector,
-                                                          long messageNumber, FiddKey.Section logicalFileSection,
+                                                          long messageNumber, FiddKey.SectionWithHeader logicalFileSection,
                                                           String metadataContainerSerializerFormat,
                                                           File outputFolder, ProgressCallback progressCallback,
                                                           @Nullable X509Certificate publicKey,
@@ -249,7 +247,7 @@ public class FiddUnpackManager {
             progressCallback.log("8.2 Loading LogicalFileMetadata for Section #" + (logicalFileIndex+1) + " (Logical File #" + logicalFileIndex + ")");
 
             LOGGER.info("Getting LogicalFileMetadata for Section #" + (logicalFileIndex+1) + " (Logical File #" + logicalFileIndex + ")");
-            Pair<LogicalFileMetadata, MetadataContainerSerializer.MetadataContainerAndLength> pair =
+            Pair<LogicalFileMetadata, MetadataContainer> pair =
                 LogicalFileMetadataUtil.getLogicalFileMetadata(baseRepositories, encryptionAlgorithm, fiddConnector, false, messageNumber,
                         logicalFileSection, metadataContainerSerializer, throwOnValidationFailure);
 
@@ -258,14 +256,13 @@ public class FiddUnpackManager {
                     progressCallback.warn("8.3 Validating LogicalFileMetadata signatures not requested, omitting");
                 } else {
                     progressCallback.log("8.3 Validating LogicalFileMetadata for Section #" + (logicalFileIndex+1) + " (Logical File #" + logicalFileIndex + ")");
-                    validateMetadataContainer(baseRepositories, pair.getRight().metadataContainer(), progressCallback,
+                    validateMetadataContainer(baseRepositories, pair.getRight(), progressCallback,
                             publicKey, throwOnValidationFailure);
                 }
 
                 LogicalFileMetadata logicalFileMetadata = pair.getLeft();
                 String logicalFileName = logicalFileMetadata.filePath();
 
-                long logicalFileMetadataLengthBytes = pair.getRight().lengthBytes();
                 if (!validateLogicalFiles) {
                     progressCallback.warn("8.4 Validating LogicalFiles not requested, omitting");
                 } else {
@@ -282,8 +279,6 @@ public class FiddUnpackManager {
                                         encryptionAlgorithm.getDecryptedStream(logicalFileSection.encryptionKeyData(),
                                             fiddConnector.getFiddMessageChunk(messageNumber, logicalFileSection.sectionOffset(),
                                                  logicalFileSection.sectionLength()))) {
-                                skipAll(logicalFileStream, logicalFileMetadataLengthBytes);
-
                                 try (InputStream signatureStream = new ByteArrayInputStream(authorsFileSignature.bytes())) {
                                     validateFileSignature(i, logicalFileName, null,
                                             logicalFileStream, signatureStream,
@@ -305,8 +300,6 @@ public class FiddUnpackManager {
                                          encryptionAlgorithm.getDecryptedStream(logicalFileSection.encryptionKeyData(),
                                                  fiddConnector.getFiddMessageChunk(messageNumber, logicalFileSection.sectionOffset(),
                                                          logicalFileSection.sectionLength()))) {
-                                skipAll(logicalFileStream, logicalFileMetadataLengthBytes);
-
                                 try (InputStream progressiveCrcStream = new ByteArrayInputStream(progressiveCrc.bytes())) {
                                     validateFileProgressiveCrc(i, logicalFileName,
                                             logicalFileStream, progressiveCrcStream, progressiveCrc.progressiveCrcChunkSize(),
@@ -325,7 +318,7 @@ public class FiddUnpackManager {
                             "\" for Section #" + (logicalFileIndex+1) + " (Logical File #" + logicalFileIndex + ")");
 
                     try (InputStream logicalFileStream = getLogicalFileInputStream(baseRepositories, fiddConnector,
-                                         messageNumber, logicalFileSection, logicalFileMetadataLengthBytes)) {
+                                         messageNumber, logicalFileSection)) {
                         File outputFile = new File(outputFolder, logicalFileMetadata.filePath());
                         // Create containing directories if needed
                         outputFile.getParentFile().mkdirs();
@@ -345,21 +338,6 @@ public class FiddUnpackManager {
             while ((bytesRead = logicalFileStream.read(buffer)) != -1) {
                 out.write(buffer, 0, bytesRead);
             }
-        }
-    }
-
-    public static void skipAll(InputStream stream, long n) throws IOException {
-        long remaining = n;
-        while (remaining > 0) {
-            long skipped = stream.skip(remaining);
-            if (skipped <= 0) {
-                // If skip() returns 0, try reading and discarding one byte
-                if (stream.read() == -1) {
-                    throw new EOFException("Reached end of stream before skipping " + n + " bytes");
-                }
-                skipped = 1;
-            }
-            remaining -= skipped;
         }
     }
 
@@ -510,7 +488,12 @@ public class FiddUnpackManager {
     }
 
     private static boolean hasCrcs(FiddKey.Section section) {
-        return section.crcs() != null && !section.crcs().isEmpty();
+        boolean hasSectionCrc = section.crcs() != null && !section.crcs().isEmpty();
+        if (section instanceof FiddKey.SectionWithHeader) {
+            FiddKey.SectionWithHeader sectionWithHeader = (FiddKey.SectionWithHeader) section;
+            return hasSectionCrc || (sectionWithHeader.headerCrcs() != null && !sectionWithHeader.headerCrcs().isEmpty());
+        }
+        return hasSectionCrc;
     }
 
     private static boolean hasSignatures(MetadataContainer container) {
@@ -527,22 +510,44 @@ public class FiddUnpackManager {
             progressCallback.warn("Section #" + sectionNumber + " has no CRCs to validate");
         } else {
             progressCallback.log("Validating CRCs for Section #" + sectionNumber);
-            for (int i = 0; i < section.crcs().size(); i++) {
-                FiddSignature crc = section.crcs().get(i);
+            if (section.crcs() != null && !section.crcs().isEmpty()) {
+                validateCrcList(section.crcs(), fiddFile, baseRepositories, sectionNumber, section, progressCallback, throwOnValidationFailure, false);
+            }
+            if (section instanceof FiddKey.SectionWithHeader) {
+                FiddKey.SectionWithHeader swh = (FiddKey.SectionWithHeader) section;
+                if (swh.headerCrcs() != null && !swh.headerCrcs().isEmpty()) {
+                    validateCrcList(swh.headerCrcs(), fiddFile, baseRepositories, sectionNumber, section, progressCallback, throwOnValidationFailure, true);
+                }
+            }
+        }
+    }
 
-                CrcCalculator crcCalculator = baseRepositories.crcCalculatorsRepo().get(crc.format());
-                if (crcCalculator == null) {
-                    String errorText = "Section #" + sectionNumber + " contains unsupported CRC Format: CRC #" + i + " / `" + crc.format() + "`. Can't validate!";
+    private static void validateCrcList(List<FiddSignature> crcs,
+                                        File fiddFile,
+                                        BaseRepositories baseRepositories,
+                                        int sectionNumber,
+                                        FiddKey.Section section,
+                                        ProgressCallback progressCallback,
+                                        boolean throwOnValidationFailure,
+                                        boolean validateHeader) throws IOException {
+        String headerText = validateHeader ? " Header" : "";
+
+        for (int i = 0; i < crcs.size(); i++) {
+            FiddSignature crc = crcs.get(i);
+
+            CrcCalculator crcCalculator = baseRepositories.crcCalculatorsRepo().get(crc.format());
+            if (crcCalculator == null) {
+                String errorText = "Section #" + sectionNumber + headerText + " contains unsupported CRC Format: CRC #" + i + " / `" + crc.format() + "`. Can't validate!";
+                warnAndMaybeThrow(errorText, progressCallback, throwOnValidationFailure);
+            } else {
+                long offset = validateHeader ? ((FiddKey.SectionWithHeader)section).headerOffset() : section.sectionOffset();
+                long length = validateHeader ? ((FiddKey.SectionWithHeader)section).headerLength() : section.sectionLength();
+                boolean result = validateCrc(fiddFile, crcCalculator, offset, length, crc.bytes());
+                if (!result) {
+                    String errorText = "CRC Validation Failed: Section #" + sectionNumber + headerText + "; CRC #" + i + " / `" + crc.format() + "`";
                     warnAndMaybeThrow(errorText, progressCallback, throwOnValidationFailure);
                 } else {
-                    boolean result = validateCrc(fiddFile, crcCalculator, section.sectionOffset(),
-                            section.sectionLength(), crc.bytes());
-                    if (!result) {
-                        String errorText = "CRC Validation Failed: Section #" + sectionNumber + "; CRC #" + i + " / `" + crc.format() + "`";
-                        warnAndMaybeThrow(errorText, progressCallback, throwOnValidationFailure);
-                    } else {
-                        progressCallback.log("Section #" + sectionNumber + "; CRC #" + i + " / `" + crc.format() + "` validated successfully!");
-                    }
+                    progressCallback.log("Section #" + sectionNumber + headerText + "; CRC #" + i + " / `" + crc.format() + "` validated successfully!");
                 }
             }
         }

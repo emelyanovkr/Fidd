@@ -36,7 +36,7 @@ public class App extends Application {
             BaseRepositories repositories = new DefaultBaseRepositories();
             FiddContentServiceCache fiddContentServiceCache = new ConcurrentFiddContentServiceCache();
 
-            int fiddApiServerPort = 8080;
+            int fiddApiServerPort = 4199;
 
             Vertx vertx = Vertx.vertx();
 

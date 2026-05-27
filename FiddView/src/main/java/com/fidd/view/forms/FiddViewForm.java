@@ -491,7 +491,7 @@ public class FiddViewForm extends AnchorPane  {
             FiddTreeNode node = treeItem.getValue();
             if (node instanceof FiddFileNode fileNode) {
                 long messageNumber = findMessageNumber(treeItem);
-                String path = "http://" + fiddApiServerAndPort + "/" + fiddName + "/" + messageNumber + "/" + fileNode.logicalFileInfo.metadata().filePath();
+                String path = "http://" + fiddApiServerAndPort + "/fidds/v1/" + fiddName + "/" + messageNumber + "/" + fileNode.logicalFileInfo.metadata().filePath();
                 copyToClipboard(path);
                 JavaFxUtils.showMessage("Copied URL to clipboard", "URL copied to clipboard:\n" + path);
             }
@@ -536,6 +536,7 @@ public class FiddViewForm extends AnchorPane  {
             StringBuilder builder = new StringBuilder();
             builder.append("http://");
             builder.append(fiddApiServerAndPort).append("/");
+            builder.append("fidds/v1/");
             builder.append(fiddName).append("/");
             while (!pathStack.isEmpty()) {
                 builder.append(pathStack.pop()).append("/");
@@ -545,7 +546,7 @@ public class FiddViewForm extends AnchorPane  {
             path = builder.toString();
         } else if (value instanceof FiddMessageNode messageNode) {
             long messageNumber = messageNode.messageNumber;
-            path = String.format("http://%s/%s/%d/?list=m3u", fiddApiServerAndPort, fiddName, messageNumber);
+            path = String.format("http://%s/fidds/v1/%s/%d/?list=m3u", fiddApiServerAndPort, fiddName, messageNumber);
         }
         return path + formPlaylistSettings(playlistSettings);
     }

@@ -62,10 +62,10 @@ public class FiddFileMetadataUtil {
             }
 
             LOGGER.info("Loading FiddFileMetadataContainer using format: " + metadataContainerSerializer.name());
-            MetadataContainerSerializer.MetadataContainerAndLength metadataContainer =
+            MetadataContainer metadataContainer =
                     metadataContainerSerializer.deserialize(metadataContainerBytes);
 
-            String fiddFileMetadataFormat = metadataContainer.metadataContainer().metadataFormat();
+            String fiddFileMetadataFormat = metadataContainer.metadataFormat();
             LOGGER.info("Loading FiddFileMetadata using format: " + fiddFileMetadataFormat);
             FiddFileMetadataSerializer fiddFileMetadataSerializer = baseRepositories.fiddFileMetadataFormatRepo().get(fiddFileMetadataFormat);
             if (fiddFileMetadataSerializer == null) {
@@ -73,10 +73,10 @@ public class FiddFileMetadataUtil {
                         " not supported. Can't Proceed!");
             }
             FiddFileMetadata fiddFileMetadata =
-                    checkNotNull(fiddFileMetadataSerializer).deserialize(metadataContainer.metadataContainer().metadata());
+                    checkNotNull(fiddFileMetadataSerializer).deserialize(metadataContainer.metadata());
 
             LOGGER.info("FiddFileMetadata loaded");
-            return Pair.of(fiddFileMetadata, metadataContainer.metadataContainer());
+            return Pair.of(fiddFileMetadata, metadataContainer);
         }
     }
 }

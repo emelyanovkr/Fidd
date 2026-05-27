@@ -9,7 +9,6 @@ import com.fidd.core.logicalfile.LogicalFileMetadata;
 import com.fidd.core.logicalfile.LogicalFileMetadataSerializer;
 import com.fidd.core.metadata.MetadataContainer;
 import com.fidd.core.metadata.MetadataContainerSerializer;
-import com.fidd.core.metadata.MetadataContainerSerializer.MetadataContainerAndLength;
 import com.fidd.core.metadata.NotEnoughBytesException;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.Test;
@@ -17,8 +16,17 @@ import org.junit.jupiter.api.Test;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class LogicalFileMetadataUtilTest {
 
@@ -32,9 +40,9 @@ public class LogicalFileMetadataUtilTest {
         LogicalFileMetadataSerializer metadataSerializer = mock(LogicalFileMetadataSerializer.class);
 
         // Section
-        FiddKey.Section section = mock(FiddKey.Section.class);
-        when(section.sectionOffset()).thenReturn(0L);
-        when(section.sectionLength()).thenReturn(10L);
+        FiddKey.SectionWithHeader section = mock(FiddKey.SectionWithHeader.class);
+        when(section.headerOffset()).thenReturn(0L);
+        when(section.headerLength()).thenReturn(10);
         when(section.encryptionAlgorithm()).thenReturn("AES");
         when(section.encryptionKeyData()).thenReturn(new byte[]{1, 2, 3});
 
@@ -52,10 +60,7 @@ public class LogicalFileMetadataUtilTest {
         when(container.metadataFormat()).thenReturn("FMT");
         when(container.metadata()).thenReturn(new byte[]{9, 9});
 
-        MetadataContainerAndLength containerAndLength =
-                MetadataContainerAndLength.of(5, container);
-
-        when(containerSerializer.deserialize(any())).thenReturn(containerAndLength);
+        when(containerSerializer.deserialize(any())).thenReturn(container);
 
         // LogicalFileMetadata
         LogicalFileMetadata metadata = mock(LogicalFileMetadata.class);
@@ -79,7 +84,7 @@ public class LogicalFileMetadataUtilTest {
         }).when(encryption).decrypt(any(), any(), any(), anyBoolean());
 
         // --- Execute ---
-        Pair<LogicalFileMetadata, MetadataContainerAndLength> result =
+        Pair<LogicalFileMetadata, MetadataContainer> result =
                 LogicalFileMetadataUtil.getLogicalFileMetadata(
                         repos, connector, false, 1L, section
                 );
@@ -87,7 +92,7 @@ public class LogicalFileMetadataUtilTest {
         // --- Verify ---
         assertNotNull(result);
         assertEquals(metadata, result.getLeft());
-        assertEquals(containerAndLength, result.getRight());
+        assertEquals(container, result.getRight());
     }
 
     @Test
@@ -97,9 +102,9 @@ public class LogicalFileMetadataUtilTest {
         EncryptionAlgorithm encryption = mock(EncryptionAlgorithm.class);
         MetadataContainerSerializer containerSerializer = mock(MetadataContainerSerializer.class);
 
-        FiddKey.Section section = mock(FiddKey.Section.class);
-        when(section.sectionOffset()).thenReturn(0L);
-        when(section.sectionLength()).thenReturn(10000L);
+        FiddKey.SectionWithHeader section = mock(FiddKey.SectionWithHeader.class);
+        when(section.headerOffset()).thenReturn(0L);
+        when(section.headerLength()).thenReturn(10000);
         when(section.encryptionAlgorithm()).thenReturn("AES");
         when(section.encryptionKeyData()).thenReturn(new byte[]{1});
 
@@ -114,9 +119,7 @@ public class LogicalFileMetadataUtilTest {
         // First call throws NotEnoughBytesException, second succeeds
         when(containerSerializer.deserialize(any()))
                 .thenThrow(new NotEnoughBytesException())
-                .thenReturn(MetadataContainerAndLength.of(5,
-                        mock(MetadataContainer.class)
-                ));
+                .thenReturn(mock(MetadataContainer.class));
 
         // LogicalFileMetadataSerializer
         LogicalFileMetadataSerializer metadataSerializer = mock(LogicalFileMetadataSerializer.class);
@@ -154,7 +157,7 @@ public class LogicalFileMetadataUtilTest {
     void testGetLogicalFileMetadata_unsupportedEncryptionAlgorithm() {
         BaseRepositories repos = mock(BaseRepositories.class);
         FiddConnector connector = mock(FiddConnector.class);
-        FiddKey.Section section = mock(FiddKey.Section.class);
+        FiddKey.SectionWithHeader section = mock(FiddKey.SectionWithHeader.class);
 
         when(section.encryptionAlgorithm()).thenReturn("BAD");
         Repository<EncryptionAlgorithm> encryptionAlgorithmRepo = mock(Repository.class);
@@ -175,9 +178,9 @@ public class LogicalFileMetadataUtilTest {
         EncryptionAlgorithm encryption = mock(EncryptionAlgorithm.class);
         MetadataContainerSerializer containerSerializer = mock(MetadataContainerSerializer.class);
 
-        FiddKey.Section section = mock(FiddKey.Section.class);
-        when(section.sectionOffset()).thenReturn(0L);
-        when(section.sectionLength()).thenReturn(5L);
+        FiddKey.SectionWithHeader section = mock(FiddKey.SectionWithHeader.class);
+        when(section.headerOffset()).thenReturn(0L);
+        when(section.headerLength()).thenReturn(5);
         when(section.encryptionAlgorithm()).thenReturn("AES");
         when(section.encryptionKeyData()).thenReturn(new byte[]{1});
 
@@ -192,10 +195,7 @@ public class LogicalFileMetadataUtilTest {
         MetadataContainer container = mock(MetadataContainer.class);
         when(container.metadataFormat()).thenReturn("UNKNOWN");
 
-        MetadataContainerAndLength containerAndLength =
-                MetadataContainerAndLength.of(5, container);
-
-        when(containerSerializer.deserialize(any())).thenReturn(containerAndLength);
+        when(containerSerializer.deserialize(any())).thenReturn(container);
 
         Repository<LogicalFileMetadataSerializer> logicalFileMetadataFormatRepo = mock(Repository.class);
         when(logicalFileMetadataFormatRepo.get("UNKNOWN")).thenReturn(null);

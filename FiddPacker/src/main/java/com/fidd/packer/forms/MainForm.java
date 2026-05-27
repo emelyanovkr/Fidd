@@ -62,7 +62,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.security.KeyPair;
 import java.security.PrivateKey;
@@ -254,11 +253,6 @@ public class MainForm {
         } else {
             throw new RuntimeException("Unsupported Key Context: " + keyContext.getClass());
         }
-    }
-
-    public void showAboutDialog() {
-        Alert alert = new Alert(Alert.AlertType.NONE, "FiddPacker v 1.2.12", ButtonType.OK);
-        alert.showAndWait();
     }
 
     public void init(Stage mainStage) {
@@ -603,8 +597,8 @@ public class MainForm {
             boolean addFiddFileMetadataSignature = checkNotNull(signFiddFileMetadataCheckBox).selectedProperty().get();
             boolean addLogicalFileSignatures = checkNotNull(signLogicalFilesCheckBox).selectedProperty().get();
             boolean addLogicalFileMetadataSignatures = checkNotNull(signLogicalFileMetadatasCheckBox).selectedProperty().get();
-            // TODO: add UI control for setting `addLogicalFileHeaderLengthToFiddKey`
-            boolean addLogicalFileHeaderLengthToFiddKey = true;
+            // TODO: add UI control for setting `alignAllMetadatas`
+            boolean alignAllMetadatas = true;
             boolean includePublicKey = checkNotNull(includePublicKeyCheckBox).selectedProperty().get();
 
             PublicKeySerializer publicKeySerializer = getComboBoxSelectionFromRepo(baseRepositories.publicKeyFormatRepo(), publicKeyFormatComboBox);
@@ -695,7 +689,6 @@ public class MainForm {
                     addFiddFileMetadataSignature,
                     addLogicalFileSignatures,
                     addLogicalFileMetadataSignatures,
-                    addLogicalFileHeaderLengthToFiddKey,
 
                     includePublicKey,
                     publicKeySerializer,
@@ -707,7 +700,8 @@ public class MainForm {
                     addProgressiveCrcs,
                     minProgressiveCrcFileSize,
                     ONE_MEBIBYTE,
-                    List.of(progressiveCrcCalculator)
+                    List.of(progressiveCrcCalculator),
+                    alignAllMetadatas
             );
 
             formMessageNumber(packedContentDirectoryRoot);

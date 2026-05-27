@@ -10,7 +10,10 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 public class LogicalFileInfoMapperTest {
 
@@ -48,14 +51,13 @@ public class LogicalFileInfoMapperTest {
         FiddKey.Section section = com.fidd.core.fiddkey.ImmutableSection.builder()
                 .sectionOffset(1000L)
                 .sectionLength(250L)
-                .headerLength(16)
                 .encryptionAlgorithm("AES-256-GCM")
                 .encryptionKeyData(new byte[]{10, 11, 12})
                 .crcs(List.of(sectionCrc))
                 .build();
 
         // Arrange source LogicalFileInfo
-        LogicalFileInfo source = com.fidd.service.LogicalFileInfo.of(metadata, section, 42L);
+        LogicalFileInfo source = com.fidd.service.LogicalFileInfo.of(metadata, section/*, 42L*/);
 
         // Act
         com.fidd.view.rest.model.LogicalFileInfo dto = LogicalFileInfoMapper.toDto(source);
@@ -64,17 +66,6 @@ public class LogicalFileInfoMapperTest {
         assertNotNull(dto);
         assertNotNull(dto.getMetadata());
         assertEquals("/path/to/file.txt", dto.getMetadata().getFilePath());
-        assertEquals(Long.valueOf(42L), dto.getFileOffset());
-        assertNotNull(dto.getSection());
-        assertEquals(Long.valueOf(1000L), dto.getSection().getSectionOffset());
-        assertEquals(Long.valueOf(250L), dto.getSection().getSectionLength());
-        assertEquals(Integer.valueOf(16), dto.getSection().getHeaderLength());
-        assertEquals("AES-256-GCM", dto.getSection().getEncryptionAlgorithm());
-        assertArrayEquals(new byte[]{10, 11, 12}, dto.getSection().getEncryptionKeyData());
-        assertNotNull(dto.getSection().getCrcs());
-        assertEquals(1, dto.getSection().getCrcs().size());
-        assertEquals("sha256", dto.getSection().getCrcs().get(0).getFormat());
-        assertArrayEquals(new byte[]{4, 5, 6}, dto.getSection().getCrcs().get(0).getBytes());
 
         assertNotNull(dto.getMetadata().getAuthorsFileSignatures());
         assertEquals(1, dto.getMetadata().getAuthorsFileSignatures().size());
@@ -110,7 +101,7 @@ public class LogicalFileInfoMapperTest {
                 .sectionOffset(1L)
                 .sectionLength(2L)
                 .build();
-        LogicalFileInfo s1 = com.fidd.service.LogicalFileInfo.of(metadata1, section1, 10L);
+        LogicalFileInfo s1 = com.fidd.service.LogicalFileInfo.of(metadata1, section1/*, 10L*/);
 
         LogicalFileMetadata metadata2 = com.fidd.core.logicalfile.ImmutableLogicalFileMetadata.builder()
                 .updateType(LogicalFileMetadata.FiddUpdateType.DELETE)
@@ -120,15 +111,13 @@ public class LogicalFileInfoMapperTest {
                 .sectionOffset(3L)
                 .sectionLength(4L)
                 .build();
-        LogicalFileInfo s2 = com.fidd.service.LogicalFileInfo.of(metadata2, section2, 20L);
+        LogicalFileInfo s2 = com.fidd.service.LogicalFileInfo.of(metadata2, section2/*, 20L*/);
 
         List<com.fidd.view.rest.model.LogicalFileInfo> list = LogicalFileInfoMapper.toDtoList(List.of(s1, s2));
 
         assertEquals(2, list.size());
         assertEquals("/a", list.get(0).getMetadata().getFilePath());
-        assertEquals(Long.valueOf(10L), list.get(0).getFileOffset());
         assertEquals("/b", list.get(1).getMetadata().getFilePath());
-        assertEquals(Long.valueOf(20L), list.get(1).getFileOffset());
     }
 
     @Test
@@ -141,15 +130,12 @@ public class LogicalFileInfoMapperTest {
                 .sectionOffset(0L)
                 .sectionLength(0L)
                 .build();
-        LogicalFileInfo source = com.fidd.service.LogicalFileInfo.of(metadata, section, 0L);
+        LogicalFileInfo source = com.fidd.service.LogicalFileInfo.of(metadata, section/*, 0L*/);
 
         com.fidd.view.rest.model.LogicalFileInfo dto = LogicalFileInfoMapper.toDto(source);
         assertNull(dto.getMetadata().getAuthorsFileSignatures());
         assertNull(dto.getMetadata().getProgressiveCrcs());
         assertNull(dto.getMetadata().getExternalLinks());
-        assertNull(dto.getSection().getEncryptionAlgorithm());
-        assertNull(dto.getSection().getEncryptionKeyData());
-        assertNull(dto.getSection().getCrcs());
     }
 
     @Test
@@ -189,13 +175,12 @@ public class LogicalFileInfoMapperTest {
         FiddKey.Section section = com.fidd.core.fiddkey.ImmutableSection.builder()
                 .sectionOffset(2000L)
                 .sectionLength(400L)
-                .headerLength(32)
                 .encryptionAlgorithm("AES-256-GCM")
                 .encryptionKeyData(new byte[]{10, 11, 12})
                 .crcs(List.of(FiddSignature.of("sha256", new byte[]{4, 5, 6})))
                 .build();
 
-        LogicalFileInfo source = com.fidd.service.LogicalFileInfo.of(metadata, section, 99L);
+        LogicalFileInfo source = com.fidd.service.LogicalFileInfo.of(metadata, section/*, 99L*/);
 
         com.fidd.view.rest.model.LogicalFileInfo dto = LogicalFileInfoMapper.toDto(source);
 
@@ -215,11 +200,6 @@ public class LogicalFileInfoMapperTest {
 
         assertEquals(1, dto.getMetadata().getExternalLinks().get(1).getFileRegions().size());
         assertEquals("file.c", dto.getMetadata().getExternalLinks().get(1).getFileRegions().get(0).getRegionFileName());
-
-        assertNotNull(dto.getSection());
-        assertEquals(Long.valueOf(2000L), dto.getSection().getSectionOffset());
-        assertEquals(Long.valueOf(400L), dto.getSection().getSectionLength());
-        assertEquals(Integer.valueOf(32), dto.getSection().getHeaderLength());
     }
 
     private static com.fidd.core.logicalfile.LogicalFileMetadata.ExternalResource.FileRegion buildRegion(

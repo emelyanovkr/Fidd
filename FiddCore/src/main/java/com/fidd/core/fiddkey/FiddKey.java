@@ -27,11 +27,19 @@ public interface FiddKey {
         @Nullable byte[] encryptionKeyData();
 
         @Nullable List<FiddSignature> crcs();
+    }
 
-        /** If there's a header in section, its size may be specified (v1.1) */
-        @Nullable Integer headerLength();
+    @Value.Immutable
+    @JsonSerialize(as = ImmutableSectionWithHeader.class)
+    @JsonDeserialize(as = ImmutableSectionWithHeader.class)
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    interface SectionWithHeader extends Section {
+        long headerOffset();
+        int headerLength();
+
+        @Nullable List<FiddSignature> headerCrcs();
     }
 
     Section fiddFileMetadata();
-    List<Section> logicalFiles();
+    List<SectionWithHeader> logicalFiles();
 }

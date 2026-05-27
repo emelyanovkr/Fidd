@@ -31,7 +31,7 @@ public class LogicalFileUtilChunkTest {
 
         assertThrows(InvalidAlgorithmParameterException.class, () ->
                 LogicalFileUtil.getLogicalFileInputStreamChunk(
-                        repos, connector, 1L, section, 0L, 0L, 10L
+                        repos, connector, 1L, section, 0L, 10L
                 )
         );
     }
@@ -60,7 +60,7 @@ public class LogicalFileUtilChunkTest {
 
         // Fake chunk returned by connector
         InputStream encryptedChunk = new ByteArrayInputStream(new byte[]{9,9,9});
-        when(connector.getFiddMessageChunk(77L, 100L + 50L + 900, 500L))
+        when(connector.getFiddMessageChunk(77L, 100L + 900, 500L))
                 .thenReturn(encryptedChunk);
 
         // Fake decrypted stream
@@ -72,7 +72,6 @@ public class LogicalFileUtilChunkTest {
         // Act
         InputStream result = LogicalFileUtil.getLogicalFileInputStreamChunk(
                 repos, connector, 77L, section,
-                50L,     // fileOffset
                 200L,    // dataOffset
                 20L      // dataLength
         );
@@ -83,7 +82,7 @@ public class LogicalFileUtilChunkTest {
         // Verify correct parameters
         verify(algorithm).getRandomAccessDecryptedStream(
                 eq(new byte[]{1,2,3}),
-                eq(200L),     // mapped ciphertext offset
+                eq(200L),     // dataOffset
                 eq(20L),      // dataLength
                 eq(encryptedChunk)
         );
@@ -118,7 +117,7 @@ public class LogicalFileUtilChunkTest {
 
         LogicalFileUtil.getLogicalFileInputStreamChunk(
                 repos, connector, 5L, section,
-                0L, 0L, 1L
+                0L, 1L
         );
 
         verify(algorithm).getRandomAccessDecryptedStream(

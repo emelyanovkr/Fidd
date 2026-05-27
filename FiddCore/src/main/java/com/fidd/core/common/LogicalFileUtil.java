@@ -21,7 +21,7 @@ public class LogicalFileUtil {
      * that would only cover this functionality partially, making it be confusing and hard to understand.
      */
     public static InputStream getLogicalFileInputStreamChunk(BaseRepositories baseRepositories, FiddConnector fiddConnector,
-                                                        long messageNumber, FiddKey.Section section, long fileOffset, long dataOffset, long dataLength) throws InvalidAlgorithmParameterException {
+                                                        long messageNumber, FiddKey.Section section, long dataOffset, long dataLength) throws InvalidAlgorithmParameterException {
         EncryptionAlgorithm baseEncryptionAlgorithm =
                 baseRepositories.encryptionAlgorithmRepo().get(section.encryptionAlgorithm());
         if (!(baseEncryptionAlgorithm instanceof RandomAccessEncryptionAlgorithm encryptionAlgorithm)) {
@@ -30,40 +30,20 @@ public class LogicalFileUtil {
         }
         byte[] keyData = section.encryptionKeyData() == null ? new byte[0] : section.encryptionKeyData();
 
-        return checkNotNull(encryptionAlgorithm).getRandomAccessDecryptedStream(keyData,
-                encryptionAlgorithm.ciphertextPosToPlaintextPos(fileOffset) + dataOffset, dataLength,
+        return checkNotNull(encryptionAlgorithm).getRandomAccessDecryptedStream(keyData, dataOffset, dataLength,
                 fiddConnector.getFiddMessageChunk(messageNumber,
-                        section.sectionOffset() + fileOffset + encryptionAlgorithm.plaintextPosToCiphertextPos(dataOffset),
+                        section.sectionOffset() + encryptionAlgorithm.plaintextPosToCiphertextPos(dataOffset),
                         encryptionAlgorithm.plaintextLengthToCiphertextLength(dataLength)));
     }
 
     public static InputStream getLogicalFileInputStream(BaseRepositories baseRepositories, FiddConnector fiddConnector,
-                                                 long messageNumber, FiddKey.Section section, long fileOffset) throws IOException {
+                                                 long messageNumber, FiddKey.Section section) throws IOException {
         EncryptionAlgorithm encryptionAlgorithm =
                 baseRepositories.encryptionAlgorithmRepo().get(section.encryptionAlgorithm());
         byte[] keyData = section.encryptionKeyData() == null ? new byte[0] : section.encryptionKeyData();
 
-        InputStream logicalFileStream =
-                checkNotNull(encryptionAlgorithm).getDecryptedStream(keyData,
-                             fiddConnector.getFiddMessageChunk(messageNumber, section.sectionOffset(),
-                                     section.sectionLength()));
-        skipAll(logicalFileStream, fileOffset);
-
-        return logicalFileStream;
-    }
-
-    public static void skipAll(InputStream stream, long n) throws IOException {
-        long remaining = n;
-        while (remaining > 0) {
-            long skipped = stream.skip(remaining);
-            if (skipped <= 0) {
-                // If skip() returns 0, try reading and discarding one byte
-                if (stream.read() == -1) {
-                    throw new EOFException("Reached end of stream before skipping " + n + " bytes");
-                }
-                skipped = 1;
-            }
-            remaining -= skipped;
-        }
+        return checkNotNull(encryptionAlgorithm).getDecryptedStream(keyData,
+                     fiddConnector.getFiddMessageChunk(messageNumber, section.sectionOffset(),
+                             section.sectionLength()));
     }
 }
