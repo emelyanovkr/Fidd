@@ -488,7 +488,12 @@ public class FiddUnpackManager {
     }
 
     private static boolean hasCrcs(FiddKey.Section section) {
-        return section.crcs() != null && !section.crcs().isEmpty();
+        boolean hasSectionCrc = section.crcs() != null && !section.crcs().isEmpty();
+        if (section instanceof FiddKey.SectionWithHeader) {
+            FiddKey.SectionWithHeader sectionWithHeader = (FiddKey.SectionWithHeader) section;
+            return hasSectionCrc || (sectionWithHeader.headerCrcs() != null && !sectionWithHeader.headerCrcs().isEmpty());
+        }
+        return hasSectionCrc;
     }
 
     private static boolean hasSignatures(MetadataContainer container) {
@@ -505,22 +510,44 @@ public class FiddUnpackManager {
             progressCallback.warn("Section #" + sectionNumber + " has no CRCs to validate");
         } else {
             progressCallback.log("Validating CRCs for Section #" + sectionNumber);
-            for (int i = 0; i < section.crcs().size(); i++) {
-                FiddSignature crc = section.crcs().get(i);
+            if (section.crcs() != null && !section.crcs().isEmpty()) {
+                validateCrcList(section.crcs(), fiddFile, baseRepositories, sectionNumber, section, progressCallback, throwOnValidationFailure, false);
+            }
+            if (section instanceof FiddKey.SectionWithHeader) {
+                FiddKey.SectionWithHeader swh = (FiddKey.SectionWithHeader) section;
+                if (swh.headerCrcs() != null && !swh.headerCrcs().isEmpty()) {
+                    validateCrcList(swh.headerCrcs(), fiddFile, baseRepositories, sectionNumber, section, progressCallback, throwOnValidationFailure, true);
+                }
+            }
+        }
+    }
 
-                CrcCalculator crcCalculator = baseRepositories.crcCalculatorsRepo().get(crc.format());
-                if (crcCalculator == null) {
-                    String errorText = "Section #" + sectionNumber + " contains unsupported CRC Format: CRC #" + i + " / `" + crc.format() + "`. Can't validate!";
+    private static void validateCrcList(List<FiddSignature> crcs,
+                                        File fiddFile,
+                                        BaseRepositories baseRepositories,
+                                        int sectionNumber,
+                                        FiddKey.Section section,
+                                        ProgressCallback progressCallback,
+                                        boolean throwOnValidationFailure,
+                                        boolean validateHeader) throws IOException {
+        String headerText = validateHeader ? " Header" : "";
+
+        for (int i = 0; i < crcs.size(); i++) {
+            FiddSignature crc = crcs.get(i);
+
+            CrcCalculator crcCalculator = baseRepositories.crcCalculatorsRepo().get(crc.format());
+            if (crcCalculator == null) {
+                String errorText = "Section #" + sectionNumber + headerText + " contains unsupported CRC Format: CRC #" + i + " / `" + crc.format() + "`. Can't validate!";
+                warnAndMaybeThrow(errorText, progressCallback, throwOnValidationFailure);
+            } else {
+                long offset = validateHeader ? ((FiddKey.SectionWithHeader)section).headerOffset() : section.sectionOffset();
+                long length = validateHeader ? ((FiddKey.SectionWithHeader)section).headerLength() : section.sectionLength();
+                boolean result = validateCrc(fiddFile, crcCalculator, offset, length, crc.bytes());
+                if (!result) {
+                    String errorText = "CRC Validation Failed: Section #" + sectionNumber + headerText + "; CRC #" + i + " / `" + crc.format() + "`";
                     warnAndMaybeThrow(errorText, progressCallback, throwOnValidationFailure);
                 } else {
-                    boolean result = validateCrc(fiddFile, crcCalculator, section.sectionOffset(),
-                            section.sectionLength(), crc.bytes());
-                    if (!result) {
-                        String errorText = "CRC Validation Failed: Section #" + sectionNumber + "; CRC #" + i + " / `" + crc.format() + "`";
-                        warnAndMaybeThrow(errorText, progressCallback, throwOnValidationFailure);
-                    } else {
-                        progressCallback.log("Section #" + sectionNumber + "; CRC #" + i + " / `" + crc.format() + "` validated successfully!");
-                    }
+                    progressCallback.log("Section #" + sectionNumber + headerText + "; CRC #" + i + " / `" + crc.format() + "` validated successfully!");
                 }
             }
         }
