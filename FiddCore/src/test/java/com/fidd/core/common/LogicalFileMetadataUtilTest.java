@@ -41,7 +41,7 @@ public class LogicalFileMetadataUtilTest {
 
         // Section
         FiddKey.SectionWithHeader section = mock(FiddKey.SectionWithHeader.class);
-        when(section.headerOffset()).thenReturn(0);
+        when(section.headerOffset()).thenReturn(0L);
         when(section.headerLength()).thenReturn(10);
         when(section.encryptionAlgorithm()).thenReturn("AES");
         when(section.encryptionKeyData()).thenReturn(new byte[]{1, 2, 3});
@@ -103,7 +103,7 @@ public class LogicalFileMetadataUtilTest {
         MetadataContainerSerializer containerSerializer = mock(MetadataContainerSerializer.class);
 
         FiddKey.SectionWithHeader section = mock(FiddKey.SectionWithHeader.class);
-        when(section.headerOffset()).thenReturn(0);
+        when(section.headerOffset()).thenReturn(0L);
         when(section.headerLength()).thenReturn(10000);
         when(section.encryptionAlgorithm()).thenReturn("AES");
         when(section.encryptionKeyData()).thenReturn(new byte[]{1});
@@ -179,7 +179,7 @@ public class LogicalFileMetadataUtilTest {
         MetadataContainerSerializer containerSerializer = mock(MetadataContainerSerializer.class);
 
         FiddKey.SectionWithHeader section = mock(FiddKey.SectionWithHeader.class);
-        when(section.headerOffset()).thenReturn(0);
+        when(section.headerOffset()).thenReturn(0L);
         when(section.headerLength()).thenReturn(5);
         when(section.encryptionAlgorithm()).thenReturn("AES");
         when(section.encryptionKeyData()).thenReturn(new byte[]{1});

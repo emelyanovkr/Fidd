@@ -34,8 +34,8 @@ public interface FiddKey {
     @JsonDeserialize(as = ImmutableSectionWithHeader.class)
     @JsonInclude(JsonInclude.Include.NON_NULL)
     interface SectionWithHeader extends Section {
-        Integer headerOffset();
-        Integer headerLength();
+        long headerOffset();
+        int headerLength();
 
         @Nullable List<FiddSignature> headerCrcs();
     }

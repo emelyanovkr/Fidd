@@ -287,7 +287,7 @@ public class FiddPackManager {
                     addCrcsToFiddKey,
                     crcCalculators,
                     section.offset(), section.length(), section.crcs(),
-                    (int)header.offset(), (int)header.length(), header.crcs());
+                    header.offset(), (int)header.length(), header.crcs());
             logicalFilesSections.add(logicalFileSection);
         }
 
@@ -360,7 +360,7 @@ public class FiddPackManager {
 
                                                        long sectionOffset, long sectionLength,
                                                        @Nullable List<byte[]> sectionCrcs,
-                                                       Integer headerOffset, Integer headerLength,
+                                                       long headerOffset, int headerLength,
                                                        @Nullable List<byte[]> headerCrcs
     ) {
         ImmutableSectionWithHeader.Builder sectionBuilder = ImmutableSectionWithHeader.builder();
