@@ -57,38 +57,37 @@ public class LogicalFileInfoMapperTest {
                 .build();
 
         // Arrange source LogicalFileInfo
-        LogicalFileInfo source = com.fidd.service.LogicalFileInfo.of(metadata, section/*, 42L*/);
+        LogicalFileInfo source = com.fidd.service.LogicalFileInfo.of(metadata, section);
 
         // Act
-        com.fidd.view.rest.model.LogicalFileInfo dto = LogicalFileInfoMapper.toDto(source);
+        com.fidd.view.rest.model.LogicalFileMetadata dto = LogicalFileInfoMapper.toDto(source);
 
         // Assert
         assertNotNull(dto);
-        assertNotNull(dto.getMetadata());
-        assertEquals("/path/to/file.txt", dto.getMetadata().getFilePath());
+        assertEquals("/path/to/file.txt", dto.getFilePath());
 
-        assertNotNull(dto.getMetadata().getAuthorsFileSignatures());
-        assertEquals(1, dto.getMetadata().getAuthorsFileSignatures().size());
-        assertEquals("ed25519", dto.getMetadata().getAuthorsFileSignatures().get(0).getFormat());
-        assertArrayEquals(new byte[]{1, 2, 3}, dto.getMetadata().getAuthorsFileSignatures().get(0).getBytes());
+        assertNotNull(dto.getAuthorsFileSignatures());
+        assertEquals(1, dto.getAuthorsFileSignatures().size());
+        assertEquals("ed25519", dto.getAuthorsFileSignatures().get(0).getFormat());
+        assertArrayEquals(new byte[]{1, 2, 3}, dto.getAuthorsFileSignatures().get(0).getBytes());
 
-        assertNotNull(dto.getMetadata().getProgressiveCrcs());
-        assertEquals(1, dto.getMetadata().getProgressiveCrcs().size());
-        assertEquals("crc32", dto.getMetadata().getProgressiveCrcs().get(0).getFormat());
-        assertArrayEquals(new byte[]{9, 8, 7}, dto.getMetadata().getProgressiveCrcs().get(0).getBytes());
-        assertEquals(Long.valueOf(1024L), dto.getMetadata().getProgressiveCrcs().get(0).getProgressiveCrcChunkSize());
+        assertNotNull(dto.getProgressiveCrcs());
+        assertEquals(1, dto.getProgressiveCrcs().size());
+        assertEquals("crc32", dto.getProgressiveCrcs().get(0).getFormat());
+        assertArrayEquals(new byte[]{9, 8, 7}, dto.getProgressiveCrcs().get(0).getBytes());
+        assertEquals(Long.valueOf(1024L), dto.getProgressiveCrcs().get(0).getProgressiveCrcChunkSize());
 
-        assertNotNull(dto.getMetadata().getExternalLinks());
-        assertEquals(1, dto.getMetadata().getExternalLinks().size());
-        assertNotNull(dto.getMetadata().getExternalLinks().get(0).getFileRegions());
-        assertEquals(1, dto.getMetadata().getExternalLinks().get(0).getFileRegions().size());
-        assertEquals(Long.valueOf(64L), dto.getMetadata().getExternalLinks().get(0).getFileRegions().get(0).getOffset());
-        assertEquals(Long.valueOf(128L), dto.getMetadata().getExternalLinks().get(0).getFileRegions().get(0).getLength());
-        assertEquals("file.part", dto.getMetadata().getExternalLinks().get(0).getFileRegions().get(0).getRegionFileName());
+        assertNotNull(dto.getExternalLinks());
+        assertEquals(1, dto.getExternalLinks().size());
+        assertNotNull(dto.getExternalLinks().get(0).getFileRegions());
+        assertEquals(1, dto.getExternalLinks().get(0).getFileRegions().size());
+        assertEquals(Long.valueOf(64L), dto.getExternalLinks().get(0).getFileRegions().get(0).getOffset());
+        assertEquals(Long.valueOf(128L), dto.getExternalLinks().get(0).getFileRegions().get(0).getLength());
+        assertEquals("file.part", dto.getExternalLinks().get(0).getFileRegions().get(0).getRegionFileName());
         assertEquals(com.fidd.view.rest.model.FileRegion.ResourceDescriptorTypeEnum.URL,
-                dto.getMetadata().getExternalLinks().get(0).getFileRegions().get(0).getResourceDescriptorType());
+                dto.getExternalLinks().get(0).getFileRegions().get(0).getResourceDescriptorType());
         assertArrayEquals("https://example.com/file.part".getBytes(),
-                dto.getMetadata().getExternalLinks().get(0).getFileRegions().get(0).getResourceDescriptor());
+                dto.getExternalLinks().get(0).getFileRegions().get(0).getResourceDescriptor());
     }
 
     @Test
@@ -101,7 +100,7 @@ public class LogicalFileInfoMapperTest {
                 .sectionOffset(1L)
                 .sectionLength(2L)
                 .build();
-        LogicalFileInfo s1 = com.fidd.service.LogicalFileInfo.of(metadata1, section1/*, 10L*/);
+        LogicalFileInfo s1 = com.fidd.service.LogicalFileInfo.of(metadata1, section1);
 
         LogicalFileMetadata metadata2 = com.fidd.core.logicalfile.ImmutableLogicalFileMetadata.builder()
                 .updateType(LogicalFileMetadata.FiddUpdateType.DELETE)
@@ -111,13 +110,13 @@ public class LogicalFileInfoMapperTest {
                 .sectionOffset(3L)
                 .sectionLength(4L)
                 .build();
-        LogicalFileInfo s2 = com.fidd.service.LogicalFileInfo.of(metadata2, section2/*, 20L*/);
+        LogicalFileInfo s2 = com.fidd.service.LogicalFileInfo.of(metadata2, section2);
 
-        List<com.fidd.view.rest.model.LogicalFileInfo> list = LogicalFileInfoMapper.toDtoList(List.of(s1, s2));
+        List<com.fidd.view.rest.model.LogicalFileMetadata> list = LogicalFileInfoMapper.toDtoList(List.of(s1, s2));
 
         assertEquals(2, list.size());
-        assertEquals("/a", list.get(0).getMetadata().getFilePath());
-        assertEquals("/b", list.get(1).getMetadata().getFilePath());
+        assertEquals("/a", list.get(0).getFilePath());
+        assertEquals("/b", list.get(1).getFilePath());
     }
 
     @Test
@@ -130,12 +129,12 @@ public class LogicalFileInfoMapperTest {
                 .sectionOffset(0L)
                 .sectionLength(0L)
                 .build();
-        LogicalFileInfo source = com.fidd.service.LogicalFileInfo.of(metadata, section/*, 0L*/);
+        LogicalFileInfo source = com.fidd.service.LogicalFileInfo.of(metadata, section);
 
-        com.fidd.view.rest.model.LogicalFileInfo dto = LogicalFileInfoMapper.toDto(source);
-        assertNull(dto.getMetadata().getAuthorsFileSignatures());
-        assertNull(dto.getMetadata().getProgressiveCrcs());
-        assertNull(dto.getMetadata().getExternalLinks());
+        com.fidd.view.rest.model.LogicalFileMetadata dto = LogicalFileInfoMapper.toDto(source);
+        assertNull(dto.getAuthorsFileSignatures());
+        assertNull(dto.getProgressiveCrcs());
+        assertNull(dto.getExternalLinks());
     }
 
     @Test
@@ -180,26 +179,26 @@ public class LogicalFileInfoMapperTest {
                 .crcs(List.of(FiddSignature.of("sha256", new byte[]{4, 5, 6})))
                 .build();
 
-        LogicalFileInfo source = com.fidd.service.LogicalFileInfo.of(metadata, section/*, 99L*/);
+        LogicalFileInfo source = com.fidd.service.LogicalFileInfo.of(metadata, section);
 
-        com.fidd.view.rest.model.LogicalFileInfo dto = LogicalFileInfoMapper.toDto(source);
+        com.fidd.view.rest.model.LogicalFileMetadata dto = LogicalFileInfoMapper.toDto(source);
 
-        assertNotNull(dto.getMetadata());
+        assertNotNull(dto);
         assertEquals(com.fidd.view.rest.model.LogicalFileMetadata.UpdateTypeEnum.CREATE_OVERRIDE,
-                dto.getMetadata().getUpdateType());
-        assertEquals("/path/to/multi.bin", dto.getMetadata().getFilePath());
-        assertEquals(2, dto.getMetadata().getAuthorsFileSignatures().size());
-        assertEquals(2, dto.getMetadata().getProgressiveCrcs().size());
-        assertEquals(2, dto.getMetadata().getExternalLinks().size());
+                dto.getUpdateType());
+        assertEquals("/path/to/multi.bin", dto.getFilePath());
+        assertEquals(2, dto.getAuthorsFileSignatures().size());
+        assertEquals(2, dto.getProgressiveCrcs().size());
+        assertEquals(2, dto.getExternalLinks().size());
 
-        assertEquals(2, dto.getMetadata().getExternalLinks().get(0).getFileRegions().size());
-        assertEquals("file.a", dto.getMetadata().getExternalLinks().get(0).getFileRegions().get(0).getRegionFileName());
-        assertEquals("file.b", dto.getMetadata().getExternalLinks().get(0).getFileRegions().get(1).getRegionFileName());
+        assertEquals(2, dto.getExternalLinks().get(0).getFileRegions().size());
+        assertEquals("file.a", dto.getExternalLinks().get(0).getFileRegions().get(0).getRegionFileName());
+        assertEquals("file.b", dto.getExternalLinks().get(0).getFileRegions().get(1).getRegionFileName());
         assertEquals(com.fidd.view.rest.model.FileRegion.ResourceDescriptorTypeEnum.URL,
-                dto.getMetadata().getExternalLinks().get(0).getFileRegions().get(0).getResourceDescriptorType());
+                dto.getExternalLinks().get(0).getFileRegions().get(0).getResourceDescriptorType());
 
-        assertEquals(1, dto.getMetadata().getExternalLinks().get(1).getFileRegions().size());
-        assertEquals("file.c", dto.getMetadata().getExternalLinks().get(1).getFileRegions().get(0).getRegionFileName());
+        assertEquals(1, dto.getExternalLinks().get(1).getFileRegions().size());
+        assertEquals("file.c", dto.getExternalLinks().get(1).getFileRegions().get(0).getRegionFileName());
     }
 
     private static com.fidd.core.logicalfile.LogicalFileMetadata.ExternalResource.FileRegion buildRegion(

@@ -9,7 +9,7 @@ import com.fidd.view.rest.model.FiddFileMetadata;
 
 import java.util.List;
 
-import com.fidd.view.rest.model.LogicalFileInfo;
+import com.fidd.view.rest.model.LogicalFileMetadata;
 import io.vertx.core.Future;
 import io.vertx.ext.web.handler.HttpException;
 
@@ -66,14 +66,14 @@ public class MessagesApiCustomImpl implements MessagesApi {
     }
 
     @Override
-    public Future<ApiResponse<List<LogicalFileInfo>>> getLogicalFileInfos(String fiddId, Long messageNumber) {
+    public Future<ApiResponse<List<LogicalFileMetadata>>> getLogicalFileInfos(String fiddId, Long messageNumber) {
         FiddContentService service = fiddContentServiceManager.getService(fiddId);
         if (service == null) { return Future.failedFuture(new HttpException(404)); }
         List<com.fidd.service.LogicalFileInfo> logicalFileInfos = checkNotNull(service).getLogicalFileInfos(messageNumber);
         if (logicalFileInfos == null) { return Future.failedFuture(new HttpException(404)); }
 
-        List<com.fidd.view.rest.model.LogicalFileInfo> dtoLogicalFileInfos =
-                LogicalFileInfoMapper.toDtoList(logicalFileInfos == null ? List.of() : logicalFileInfos);
+        List<LogicalFileMetadata> dtoLogicalFileInfos =
+                LogicalFileInfoMapper.toDtoList(logicalFileInfos);
         return Future.succeededFuture(new ApiResponse<>(dtoLogicalFileInfos));
     }
 }

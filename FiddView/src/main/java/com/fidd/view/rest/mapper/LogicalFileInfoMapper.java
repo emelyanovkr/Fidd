@@ -1,7 +1,6 @@
 package com.fidd.view.rest.mapper;
 
 import com.fidd.view.rest.model.FileRegion;
-import com.fidd.view.rest.model.LogicalFileInfo;
 import com.fidd.view.rest.model.LogicalFileMetadata;
 import org.modelmapper.ModelMapper;
 
@@ -17,7 +16,7 @@ public class LogicalFileInfoMapper {
                 .setFieldAccessLevel(org.modelmapper.config.Configuration.AccessLevel.PRIVATE);
 
         // Register TypeMaps and attach FluentConverter as post-converter to preserve default mapping
-        MODEL_MAPPER.createTypeMap(com.fidd.service.LogicalFileInfo.class, LogicalFileInfo.class);
+        MODEL_MAPPER.createTypeMap(com.fidd.service.LogicalFileInfo.class, LogicalFileMetadata.class);
 
         MODEL_MAPPER.createTypeMap(com.fidd.core.logicalfile.LogicalFileMetadata.class, LogicalFileMetadata.class);
         MODEL_MAPPER.createTypeMap(com.fidd.core.logicalfile.ImmutableLogicalFileMetadata.class, LogicalFileMetadata.class);
@@ -40,22 +39,20 @@ public class LogicalFileInfoMapper {
                 ctx.getSource() != null ? FileRegion.ResourceDescriptorTypeEnum.valueOf(ctx.getSource().name()) : null);
 
         // No idea why it wouldn't map automatically
-        MODEL_MAPPER.createTypeMap(com.fidd.service.ImmutableLogicalFileInfo.class, LogicalFileInfo.class)
+        MODEL_MAPPER.createTypeMap(com.fidd.service.ImmutableLogicalFileInfo.class, LogicalFileMetadata.class)
                 .setPostConverter(ctx -> {
                             if (ctx.getSource() == null) { return null; }
                             com.fidd.service.LogicalFileInfo src = ctx.getSource();
-                            LogicalFileInfo dst = new LogicalFileInfo();
-                            dst.setMetadata(MODEL_MAPPER.map(src.metadata(), LogicalFileMetadata.class));
-                            return dst;
+                            return MODEL_MAPPER.map(src.metadata(), LogicalFileMetadata.class);
                         }
                 );
     }
 
-    public static LogicalFileInfo toDto(com.fidd.service.LogicalFileInfo logicalFileInfo) {
-        return MODEL_MAPPER.map(logicalFileInfo, LogicalFileInfo.class);
+    public static LogicalFileMetadata toDto(com.fidd.service.LogicalFileInfo logicalFileInfo) {
+        return MODEL_MAPPER.map(logicalFileInfo, LogicalFileMetadata.class);
     }
 
-    public static List<LogicalFileInfo> toDtoList(List<com.fidd.service.LogicalFileInfo> logicalFileInfo) {
+    public static List<LogicalFileMetadata> toDtoList(List<com.fidd.service.LogicalFileInfo> logicalFileInfo) {
         return logicalFileInfo.stream().map(LogicalFileInfoMapper::toDto).collect(Collectors.toList());
     }
 }
