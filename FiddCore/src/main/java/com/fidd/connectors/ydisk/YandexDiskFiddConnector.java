@@ -169,4 +169,9 @@ public class YandexDiskFiddConnector extends BaseDirectoryConnector implements F
 
         return is;
     }
+
+    @Override
+    public InputStream getFiddMessageChunks(long messageNumber, List<Chunk> chunks) {
+        throw new UnsupportedOperationException();
+    }
 }

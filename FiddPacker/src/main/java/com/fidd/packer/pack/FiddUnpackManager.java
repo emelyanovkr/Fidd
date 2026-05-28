@@ -248,7 +248,7 @@ public class FiddUnpackManager {
 
             LOGGER.info("Getting LogicalFileMetadata for Section #" + (logicalFileIndex+1) + " (Logical File #" + logicalFileIndex + ")");
             Pair<LogicalFileMetadata, MetadataContainer> pair =
-                LogicalFileMetadataUtil.getLogicalFileMetadata(baseRepositories, encryptionAlgorithm, fiddConnector, false, messageNumber,
+                LogicalFileMetadataUtil.getLogicalFileMetadata(baseRepositories, encryptionAlgorithm, fiddConnector, messageNumber,
                         logicalFileSection, metadataContainerSerializer, throwOnValidationFailure);
 
             if (pair != null) {

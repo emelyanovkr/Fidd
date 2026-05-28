@@ -14,7 +14,6 @@ import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -90,5 +89,10 @@ public class FolderFiddConnector extends BaseDirectoryConnector implements FiddC
     @Override
     protected InputStream getSubInpuStream(String path, long offset, long length) throws IOException {
         return SubFileInputStream.of(Path.of(path).toFile(), offset, length);
+    }
+
+    @Override
+    public InputStream getFiddMessageChunks(long messageNumber, List<Chunk> chunks) {
+        throw new UnsupportedOperationException();
     }
 }

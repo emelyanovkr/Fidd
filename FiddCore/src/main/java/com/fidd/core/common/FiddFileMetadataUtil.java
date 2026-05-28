@@ -1,7 +1,6 @@
 package com.fidd.core.common;
 
 import com.fidd.base.BaseRepositories;
-import com.fidd.connectors.FiddCacheConnector;
 import com.fidd.connectors.FiddConnector;
 import com.fidd.core.encryption.EncryptionAlgorithm;
 import com.fidd.core.fiddfile.FiddFileMetadata;
@@ -32,14 +31,8 @@ public class FiddFileMetadataUtil {
         MetadataContainerSerializer metadataContainerSerializer =
                 checkNotNull(baseRepositories.metadataContainerFormatRepo().get(metadataContainerSerializerFormat));
 
-        InputStream metadataSectionStream;
-        if (fiddConnector instanceof FiddCacheConnector) {
-            metadataSectionStream = ((FiddCacheConnector)fiddConnector).getFiddMessageChunk(messageNumber,
-                fiddFileMetadataSection.sectionOffset(), fiddFileMetadataSection.sectionLength(), tryCache);
-        } else {
-            metadataSectionStream = fiddConnector.getFiddMessageChunk(messageNumber,
-                    fiddFileMetadataSection.sectionOffset(), fiddFileMetadataSection.sectionLength());
-        }
+        InputStream metadataSectionStream = fiddConnector.getFiddMessageChunk(messageNumber,
+                fiddFileMetadataSection.sectionOffset(), fiddFileMetadataSection.sectionLength());
 
         try (metadataSectionStream) {
             String encryptionAlgorithmName = fiddFileMetadataSection.encryptionAlgorithm();

@@ -1,16 +1,13 @@
 package com.fidd.service.wrapper;
 
 import com.fidd.base.BaseRepositories;
-import com.fidd.connectors.FiddCacheConnector;
 import com.fidd.connectors.FiddConnector;
-import com.fidd.connectors.cache.ram.RamCacheConnector;
 import com.fidd.core.common.FiddKeyUtil;
 import com.fidd.core.common.LogicalFileMetadataUtil;
 import com.fidd.core.fiddfile.FiddFileMetadata;
 import com.fidd.core.fiddkey.FiddKey;
 import com.fidd.core.logicalfile.LogicalFileMetadata;
 import com.fidd.core.metadata.MetadataContainer;
-import com.fidd.core.metadata.MetadataContainerSerializer;
 import com.fidd.service.FiddContentService;
 import com.fidd.service.LogicalFileInfo;
 import com.google.common.base.Supplier;
@@ -37,18 +34,13 @@ public class WrapperFiddContentService implements FiddContentService {
     final static String METADATA_CONTAINER_SERIALIZER_FORMAT = "BLOBS";
 
     protected final BaseRepositories baseRepositories;
-    protected final FiddCacheConnector fiddConnector;
+    protected final FiddConnector fiddConnector;
     protected final Supplier<Pair<X509Certificate, PrivateKey>> keySupplier;
 
     public WrapperFiddContentService(BaseRepositories baseRepositories, FiddConnector fiddConnector,
                                      Supplier<Pair<X509Certificate, PrivateKey>> keySupplier) {
         this.baseRepositories = baseRepositories;
-        if (fiddConnector instanceof FiddCacheConnector) {
-            this.fiddConnector = (FiddCacheConnector) fiddConnector;
-        } else {
-            this.fiddConnector = new RamCacheConnector(fiddConnector, 1024, 100024,
-                    1024, 1024, 1024, 1024);
-        }
+        this.fiddConnector = fiddConnector;
         this.keySupplier = keySupplier;
     }
 
@@ -119,7 +111,7 @@ public class WrapperFiddContentService implements FiddContentService {
                 FiddKey.SectionWithHeader logicalFileSection = fiddKey.logicalFiles().get(i);
                 Pair<LogicalFileMetadata, MetadataContainer> logicalFileMetadataAndContainer =
                      LogicalFileMetadataUtil.getLogicalFileMetadata(baseRepositories,
-                            fiddConnector, true, messageNumber,
+                            fiddConnector, messageNumber,
                             logicalFileSection);
 
                 logicalFileInfo.add(LogicalFileInfo.of(checkNotNull(logicalFileMetadataAndContainer).getLeft(),

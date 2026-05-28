@@ -86,7 +86,7 @@ public class LogicalFileMetadataUtilTest {
         // --- Execute ---
         Pair<LogicalFileMetadata, MetadataContainer> result =
                 LogicalFileMetadataUtil.getLogicalFileMetadata(
-                        repos, connector, false, 1L, section
+                        repos, connector, 1L, section
                 );
 
         // --- Verify ---
@@ -147,7 +147,7 @@ public class LogicalFileMetadataUtilTest {
         }).when(encryption).decrypt(any(), any(), any(), anyBoolean());
 
         var result = LogicalFileMetadataUtil.getLogicalFileMetadata(
-                repos, connector, false, 1L, section
+                repos, connector, 1L, section
         );
 
         assertNotNull(result);
@@ -166,7 +166,7 @@ public class LogicalFileMetadataUtilTest {
 
         assertThrows(RuntimeException.class, () ->
                 LogicalFileMetadataUtil.getLogicalFileMetadata(
-                        repos, connector, false, 1L, section
+                        repos, connector, 1L, section
                 )
         );
     }
@@ -212,7 +212,7 @@ public class LogicalFileMetadataUtilTest {
 
         assertThrows(RuntimeException.class, () ->
                 LogicalFileMetadataUtil.getLogicalFileMetadata(
-                        repos, encryption, connector, false, 1L, section, containerSerializer, true
+                        repos, encryption, connector, 1L, section, containerSerializer, true
                 )
         );
     }
