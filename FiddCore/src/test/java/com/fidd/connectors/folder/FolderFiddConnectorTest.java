@@ -487,6 +487,30 @@ public class FolderFiddConnectorTest {
     }
 
     // ------------------------------------------------------------
+    // getMessageFileChunks
+    // ------------------------------------------------------------
+    @Test
+    void testGetFiddMessageChunks() throws IOException {
+        Path msg = createMessageFolder(1);
+        Path file = msg.resolve("fidd.message");
+        write(file, "abcdefgh");
+
+        FolderFiddConnector fidd = new FolderFiddConnector(temp.toString());
+        com.fidd.connectors.FiddConnector.Chunk chunk1 = new com.fidd.connectors.FiddConnector.Chunk() {
+            public long offset() { return 1; }
+            public long length() { return 2; } // bc
+        };
+        com.fidd.connectors.FiddConnector.Chunk chunk2 = new com.fidd.connectors.FiddConnector.Chunk() {
+            public long offset() { return 5; }
+            public long length() { return 3; } // fgh
+        };
+
+        try (InputStream in = fidd.getFiddMessageChunks(1, List.of(chunk1, chunk2))) {
+            assertEquals("bcfgh", new String(in.readAllBytes()));
+        }
+    }
+
+    // ------------------------------------------------------------
     // Signature file retrieval
     // ------------------------------------------------------------
     @Test
