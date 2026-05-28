@@ -1,3 +1,4 @@
+```java
 package com.fidd.connectors;
 
 import java.io.InputStream;
@@ -8,9 +9,6 @@ public interface FastFiddConnector extends FiddConnector {
         long offset();
         long length();
     }
-
-    /** Chunk bytes Concatenated in return Input Stream */
-    InputStream getFiddMessageChunks(long messageNumber, List<Chunk> chunks);
 
     // TODO: Use case for length? This is not the "right" length anyway, it's message file size
     //  true length can only be calculated from FiddKey
@@ -38,3 +36,4 @@ public interface FastFiddConnector extends FiddConnector {
     //PageResult<byte[]> getFiddKeySignatures(long messageNumber, int index, int page);
     //PageResult<byte[]> getFiddMessageSignatures(long messageNumber, int index, int page);
 }
+```
