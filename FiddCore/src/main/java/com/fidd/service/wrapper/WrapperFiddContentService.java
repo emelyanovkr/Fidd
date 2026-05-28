@@ -4,9 +4,11 @@ import com.fidd.base.BaseRepositories;
 import com.fidd.connectors.FiddConnector;
 import com.fidd.core.common.FiddKeyUtil;
 import com.fidd.core.common.LogicalFileMetadataUtil;
+import com.fidd.core.common.SubInputStream;
 import com.fidd.core.fiddfile.FiddFileMetadata;
 import com.fidd.core.fiddkey.FiddKey;
 import com.fidd.core.logicalfile.LogicalFileMetadata;
+import com.fidd.core.metadata.FiddMetadatas;
 import com.fidd.core.metadata.MetadataContainer;
 import com.fidd.service.FiddContentService;
 import com.fidd.service.LogicalFileInfo;
@@ -20,6 +22,7 @@ import java.io.InputStream;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 import static com.fidd.core.common.FiddFileMetadataUtil.loadFiddFileMetadata;
@@ -77,7 +80,7 @@ public class WrapperFiddContentService implements FiddContentService {
     }
 
     @Override
-    public @Nullable FiddFileMetadata getFiddFileMetadata(long messageNumber) {
+    public @Nullable FiddMetadatas getFiddMetadatas(long messageNumber) {
         try {
             LOGGER.info("Getting FiddFileMetadata for message #" + messageNumber);
 
@@ -85,41 +88,47 @@ public class WrapperFiddContentService implements FiddContentService {
             FiddKey fiddKey = loadFiddKey(messageNumber);
             if (fiddKey == null) { return null; }
 
-            // 2. Load FiddFileMetadata Section
+            // 2. Form chunk list and load chunkStream
+            List<FiddConnector.Chunk<FiddKey.Section>> chunks = new ArrayList<>();
+
             FiddKey.Section fiddFileMetadataSection = fiddKey.fiddFileMetadata();
-            Pair<FiddFileMetadata, MetadataContainer> fiddFileMetadataAndContainer =
-                    loadFiddFileMetadata(baseRepositories, fiddConnector, true, messageNumber,
-                        fiddFileMetadataSection, METADATA_CONTAINER_SERIALIZER_FORMAT);
+            chunks.add(new FiddConnector.Chunk<>(fiddFileMetadataSection.sectionOffset(), fiddFileMetadataSection.sectionLength(), fiddFileMetadataSection));
 
-            return fiddFileMetadataAndContainer.getLeft();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    @Override
-    public @Nullable List<LogicalFileInfo> getLogicalFileInfos(long messageNumber) {
-        try {
-            // 1. Load FiddKey
-            FiddKey fiddKey = loadFiddKey(messageNumber);
-            if (fiddKey == null) { return null; }
-
-            // 2. Load LogicalFileInfo Sections
-            List<LogicalFileInfo> logicalFileInfo = new ArrayList<>();
             for (int i = 0; i < fiddKey.logicalFiles().size(); i++) {
-                LOGGER.info("Getting LogicalFileMetadata for Section #" + (i+1) + " (Logical File #" + i + ")");
                 FiddKey.SectionWithHeader logicalFileSection = fiddKey.logicalFiles().get(i);
-                Pair<LogicalFileMetadata, MetadataContainer> logicalFileMetadataAndContainer =
-                     LogicalFileMetadataUtil.getLogicalFileMetadata(baseRepositories,
-                            fiddConnector, messageNumber,
-                            logicalFileSection);
-
-                logicalFileInfo.add(LogicalFileInfo.of(checkNotNull(logicalFileMetadataAndContainer).getLeft(),
-                        logicalFileSection
-                    ));
+                chunks.add(new FiddConnector.Chunk<>(logicalFileSection.headerOffset(), logicalFileSection.headerLength(), logicalFileSection));
             }
 
-            return logicalFileInfo;
+            chunks.sort(Comparator.comparingLong(FiddConnector.Chunk::offset));
+
+            InputStream concatenatedChunkStream = fiddConnector.getFiddMessageChunks(messageNumber, chunks);
+
+            // 3. Load metadata Sections
+            Pair<FiddFileMetadata, MetadataContainer> fiddFileMetadataAndContainer = null;
+            List<LogicalFileInfo> logicalFileInfo = new ArrayList<>();
+
+            for (int i = 0; i < chunks.size(); i++) {
+                FiddConnector.Chunk<FiddKey.Section> chunk = chunks.get(i);
+
+                SubInputStream subStream = new SubInputStream(concatenatedChunkStream, 0, chunk.length(), i == chunks.size()-1);
+                if (chunk.info() instanceof FiddKey.SectionWithHeader logicalFileSection) {
+                    // Logical file section
+                    LOGGER.info("Getting LogicalFileMetadata for Section message #" + messageNumber);
+                    Pair<LogicalFileMetadata, MetadataContainer> logicalFileMetadataAndContainer =
+                            LogicalFileMetadataUtil.getLogicalFileMetadata(baseRepositories, subStream,
+                                    logicalFileSection);
+                    logicalFileInfo.add(LogicalFileInfo.of(checkNotNull(logicalFileMetadataAndContainer).getLeft(),
+                            logicalFileSection
+                    ));
+                } else {
+                    // Fidd metadata section
+                    LOGGER.info("Getting FiddFileMetadata for message #" + messageNumber);
+                    fiddFileMetadataAndContainer = loadFiddFileMetadata(baseRepositories, subStream,
+                            fiddFileMetadataSection, METADATA_CONTAINER_SERIALIZER_FORMAT);
+                }
+            }
+
+            return FiddMetadatas.of(checkNotNull(fiddFileMetadataAndContainer).getLeft(), logicalFileInfo);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

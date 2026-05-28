@@ -22,17 +22,12 @@ public class FiddFileMetadataUtil {
     public final static Logger LOGGER = LoggerFactory.getLogger(FiddFileMetadataUtil.class);
 
     public static Pair<FiddFileMetadata, MetadataContainer> loadFiddFileMetadata(BaseRepositories baseRepositories,
-                                                                                 FiddConnector fiddConnector,
-                                                                                 boolean tryCache,
-                                                                                 long messageNumber,
+                                                                                 InputStream metadataSectionStream,
                                                                                  FiddKey.Section fiddFileMetadataSection,
                                                                                  String metadataContainerSerializerFormat
     ) throws IOException, NotEnoughBytesException {
         MetadataContainerSerializer metadataContainerSerializer =
                 checkNotNull(baseRepositories.metadataContainerFormatRepo().get(metadataContainerSerializerFormat));
-
-        InputStream metadataSectionStream = fiddConnector.getFiddMessageChunk(messageNumber,
-                fiddFileMetadataSection.sectionOffset(), fiddFileMetadataSection.sectionLength());
 
         try (metadataSectionStream) {
             String encryptionAlgorithmName = fiddFileMetadataSection.encryptionAlgorithm();

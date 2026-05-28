@@ -95,7 +95,7 @@ public class FolderFiddConnector extends BaseDirectoryConnector implements FiddC
     }
 
     @Override
-    public InputStream getFiddMessageChunks(long messageNumber, List<Chunk> chunks) {
+    public InputStream getFiddMessageChunks(long messageNumber, List<? extends Chunk<?>> chunks) {
         try {
             String messageFilePath = messageFilePath(messageNumber);
             if (!pathExists(messageFilePath) || !pathIsRegularFile(messageFilePath)) {
@@ -103,7 +103,7 @@ public class FolderFiddConnector extends BaseDirectoryConnector implements FiddC
             }
 
             List<InputStream> streams = new ArrayList<>(chunks.size());
-            for (Chunk chunk : chunks) {
+            for (Chunk<?> chunk : chunks) {
                 streams.add(getSubInpuStream(messageFilePath, chunk.offset(), chunk.length()));
             }
             return new SequenceInputStream(Collections.enumeration(streams));

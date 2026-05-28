@@ -6,10 +6,7 @@ import java.io.InputStream;
 import java.util.List;
 
 public interface FiddConnector {
-    interface Chunk {
-        long offset();
-        long length();
-    }
+    record Chunk<T> (long offset, long length, T info) {}
 
     /** Descending order */
     List<Long> getMessageNumbersTail(int count);
@@ -31,7 +28,7 @@ public interface FiddConnector {
     InputStream getFiddMessageChunk(long messageNumber, long offset, long length);
 
     /** Chunk bytes Concatenated in return Input Stream */
-    InputStream getFiddMessageChunks(long messageNumber, List<Chunk> chunks);
+    InputStream getFiddMessageChunks(long messageNumber, List<? extends Chunk<?>> chunks);
 
     int getFiddKeySignatureCount(long messageNumber);
     byte[] getFiddKeySignature(long messageNumber, int index);

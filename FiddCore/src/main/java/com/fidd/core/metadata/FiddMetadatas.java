@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fidd.core.fiddfile.FiddFileMetadata;
-import com.fidd.core.logicalfile.LogicalFileMetadata;
+import com.fidd.service.LogicalFileInfo;
 import org.immutables.value.Value;
 
 import java.util.List;
@@ -15,5 +15,9 @@ import java.util.List;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public interface FiddMetadatas {
     FiddFileMetadata fiddFileMetadata();
-    List<LogicalFileMetadata> logicalFileMetadatas();
+    List<LogicalFileInfo> logicalFileInfos();
+
+    static FiddMetadatas of(FiddFileMetadata fiddFileMetadata, List<LogicalFileInfo> logicalFileInfos) {
+        return ImmutableFiddMetadatas.builder().fiddFileMetadata(fiddFileMetadata).logicalFileInfos(logicalFileInfos).build();
+    }
 }

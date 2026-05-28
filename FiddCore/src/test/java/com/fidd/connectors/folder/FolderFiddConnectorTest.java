@@ -1,5 +1,6 @@
 package com.fidd.connectors.folder;
 
+import com.fidd.connectors.FiddConnector;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -496,14 +497,8 @@ public class FolderFiddConnectorTest {
         write(file, "abcdefgh");
 
         FolderFiddConnector fidd = new FolderFiddConnector(temp.toString());
-        com.fidd.connectors.FiddConnector.Chunk chunk1 = new com.fidd.connectors.FiddConnector.Chunk() {
-            public long offset() { return 1; }
-            public long length() { return 2; } // bc
-        };
-        com.fidd.connectors.FiddConnector.Chunk chunk2 = new com.fidd.connectors.FiddConnector.Chunk() {
-            public long offset() { return 5; }
-            public long length() { return 3; } // fgh
-        };
+        com.fidd.connectors.FiddConnector.Chunk<Object> chunk1 = new FiddConnector.Chunk<>(1, 2, new Object());
+        com.fidd.connectors.FiddConnector.Chunk<Object> chunk2 = new FiddConnector.Chunk<>(5, 3, new Object());
 
         try (InputStream in = fidd.getFiddMessageChunks(1, List.of(chunk1, chunk2))) {
             assertEquals("bcfgh", new String(in.readAllBytes()));

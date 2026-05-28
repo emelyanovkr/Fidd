@@ -6,9 +6,14 @@ import java.io.InputStream;
 
 public class SubInputStream extends InputStream {
     private final InputStream in;
+    private final boolean closeParent;
     private long remaining;
 
     public SubInputStream(InputStream fis, long offset, long length) throws IOException {
+        this(fis, offset, length, true);
+    }
+
+    public SubInputStream(InputStream fis, long offset, long length, boolean closeParent) throws IOException {
         // Skip to the offset
         long skipped = 0;
         while (skipped < offset) {
@@ -19,6 +24,7 @@ public class SubInputStream extends InputStream {
 
         this.in = fis;
         this.remaining = length;
+        this.closeParent = closeParent;
     }
 
     @Override
@@ -40,6 +46,8 @@ public class SubInputStream extends InputStream {
 
     @Override
     public void close() throws IOException {
-        in.close();
+        if (closeParent) {
+            in.close();
+        }
     }
 }
