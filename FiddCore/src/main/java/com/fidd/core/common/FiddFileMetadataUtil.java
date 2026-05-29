@@ -1,7 +1,6 @@
 package com.fidd.core.common;
 
 import com.fidd.base.BaseRepositories;
-import com.fidd.connectors.FiddCacheConnector;
 import com.fidd.connectors.FiddConnector;
 import com.fidd.core.encryption.EncryptionAlgorithm;
 import com.fidd.core.fiddfile.FiddFileMetadata;
@@ -23,23 +22,12 @@ public class FiddFileMetadataUtil {
     public final static Logger LOGGER = LoggerFactory.getLogger(FiddFileMetadataUtil.class);
 
     public static Pair<FiddFileMetadata, MetadataContainer> loadFiddFileMetadata(BaseRepositories baseRepositories,
-                                                                                 FiddConnector fiddConnector,
-                                                                                 boolean tryCache,
-                                                                                 long messageNumber,
+                                                                                 InputStream metadataSectionStream,
                                                                                  FiddKey.Section fiddFileMetadataSection,
                                                                                  String metadataContainerSerializerFormat
     ) throws IOException, NotEnoughBytesException {
         MetadataContainerSerializer metadataContainerSerializer =
                 checkNotNull(baseRepositories.metadataContainerFormatRepo().get(metadataContainerSerializerFormat));
-
-        InputStream metadataSectionStream;
-        if (fiddConnector instanceof FiddCacheConnector) {
-            metadataSectionStream = ((FiddCacheConnector)fiddConnector).getFiddMessageChunk(messageNumber,
-                fiddFileMetadataSection.sectionOffset(), fiddFileMetadataSection.sectionLength(), tryCache);
-        } else {
-            metadataSectionStream = fiddConnector.getFiddMessageChunk(messageNumber,
-                    fiddFileMetadataSection.sectionOffset(), fiddFileMetadataSection.sectionLength());
-        }
 
         try (metadataSectionStream) {
             String encryptionAlgorithmName = fiddFileMetadataSection.encryptionAlgorithm();

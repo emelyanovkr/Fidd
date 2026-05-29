@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+// TODO: use Caffeine to store service map?
 public class ConcurrentFiddContentServiceCache implements FiddContentServiceCache {
     protected final Map<String, FiddContentService> serviceMap;
 

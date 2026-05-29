@@ -13,6 +13,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -76,9 +78,10 @@ public class FiddFileMetadataUtilTest {
         when(fiddFileMetadataSerializer.deserialize(metadataBytes))
                 .thenReturn(fiddFileMetadata);
 
+        InputStream stream = new ByteArrayInputStream(encryptedBytes);
         Pair<FiddFileMetadata, MetadataContainer> result =
                 FiddFileMetadataUtil.loadFiddFileMetadata(
-                        baseRepositories, fiddConnector, false, messageNumber, section, "json"
+                        baseRepositories, stream, section, "json"
                 );
 
         assertEquals(fiddFileMetadata, result.getLeft());
@@ -124,9 +127,10 @@ public class FiddFileMetadataUtilTest {
         when(fiddFileMetadataSerializer.deserialize(metadataBytes))
                 .thenReturn(fiddFileMetadata);
 
+        InputStream stream = new ByteArrayInputStream(rawBytes);
         Pair<FiddFileMetadata, MetadataContainer> result =
                 FiddFileMetadataUtil.loadFiddFileMetadata(
-                        baseRepositories, fiddConnector, false, messageNumber, section, "json"
+                        baseRepositories, stream, section, "json"
                 );
 
         assertEquals(fiddFileMetadata, result.getLeft());
@@ -143,9 +147,10 @@ public class FiddFileMetadataUtilTest {
         when(baseRepositories.encryptionAlgorithmRepo().get("BAD"))
                 .thenReturn(null);
 
+        InputStream stream = mock(InputStream.class);
         assertThrows(RuntimeException.class, () ->
                 FiddFileMetadataUtil.loadFiddFileMetadata(
-                        baseRepositories, fiddConnector, false, 1L, section, "json"
+                        baseRepositories, stream, section, "json"
                 )
         );
     }
@@ -155,9 +160,10 @@ public class FiddFileMetadataUtilTest {
         when(baseRepositories.metadataContainerFormatRepo().get("json"))
                 .thenReturn(null);
 
+        InputStream stream = mock(InputStream.class);
         assertThrows(NullPointerException.class, () ->
                 FiddFileMetadataUtil.loadFiddFileMetadata(
-                        baseRepositories, fiddConnector, false, 1L, section, "json"
+                        baseRepositories, stream, section, "json"
                 )
         );
     }
@@ -189,9 +195,10 @@ public class FiddFileMetadataUtilTest {
         when(baseRepositories.fiddFileMetadataFormatRepo().get("fmt"))
                 .thenReturn(null);
 
+        InputStream stream = new ByteArrayInputStream(bytes);
         assertThrows(RuntimeException.class, () ->
                 FiddFileMetadataUtil.loadFiddFileMetadata(
-                        baseRepositories, fiddConnector, false, 1L, section, "json"
+                        baseRepositories, stream, section, "json"
                 )
         );
     }
@@ -205,12 +212,12 @@ public class FiddFileMetadataUtilTest {
         when(section.sectionLength()).thenReturn(10L);
         when(section.encryptionAlgorithm()).thenReturn("AES");
 
-        when(fiddConnector.getFiddMessageChunk(1L, 0L, 10L))
-                .thenThrow(new RuntimeException("boom"));
+        InputStream stream = mock(InputStream.class);
+        when(stream.readAllBytes()).thenThrow(new IOException("boom"));
 
-        assertThrows(RuntimeException.class, () ->
+        assertThrows(IOException.class, () ->
                 FiddFileMetadataUtil.loadFiddFileMetadata(
-                        baseRepositories, fiddConnector, false, 1L, section, "json"
+                        baseRepositories, stream, section, "json"
                 )
         );
     }

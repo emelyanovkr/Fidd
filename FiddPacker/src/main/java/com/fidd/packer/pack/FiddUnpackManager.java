@@ -120,7 +120,9 @@ public class FiddUnpackManager {
 
         Pair<FiddFileMetadata, MetadataContainer> fiddFileMetadataAndContainer = null;
         try {
-            fiddFileMetadataAndContainer = loadFiddFileMetadata(baseRepositories, fiddConnector, false, messageNumber,
+            InputStream metadataSectionStream = fiddConnector.getFiddMessageChunk(messageNumber,
+                    checkNotNull(fiddKey).fiddFileMetadata().sectionOffset(), checkNotNull(fiddKey).fiddFileMetadata().sectionLength());
+            fiddFileMetadataAndContainer = loadFiddFileMetadata(baseRepositories, metadataSectionStream,
                     checkNotNull(fiddKey).fiddFileMetadata(), METADATA_CONTAINER_SERIALIZER_FORMAT);
         } catch (NotEnoughBytesException e) {
             warnAndMaybeThrow(StringUtils.defaultIfBlank(e.getMessage(), e.toString()), progressCallback, true);
@@ -247,8 +249,10 @@ public class FiddUnpackManager {
             progressCallback.log("8.2 Loading LogicalFileMetadata for Section #" + (logicalFileIndex+1) + " (Logical File #" + logicalFileIndex + ")");
 
             LOGGER.info("Getting LogicalFileMetadata for Section #" + (logicalFileIndex+1) + " (Logical File #" + logicalFileIndex + ")");
+            InputStream sectionHeaderInputStream = fiddConnector.getFiddMessageChunk(messageNumber,
+                    logicalFileSection.headerOffset(), logicalFileSection.headerLength());
             Pair<LogicalFileMetadata, MetadataContainer> pair =
-                LogicalFileMetadataUtil.getLogicalFileMetadata(baseRepositories, encryptionAlgorithm, fiddConnector, false, messageNumber,
+                LogicalFileMetadataUtil.getLogicalFileMetadata(baseRepositories, encryptionAlgorithm, sectionHeaderInputStream,
                         logicalFileSection, metadataContainerSerializer, throwOnValidationFailure);
 
             if (pair != null) {

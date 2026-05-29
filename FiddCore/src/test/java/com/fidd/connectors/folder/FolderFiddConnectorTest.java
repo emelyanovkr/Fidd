@@ -1,5 +1,6 @@
 package com.fidd.connectors.folder;
 
+import com.fidd.connectors.FiddConnector;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -483,6 +484,24 @@ public class FolderFiddConnectorTest {
         FolderFiddConnector fidd = new FolderFiddConnector(temp.toString());
         try (InputStream in = fidd.getFiddMessageChunk(1, 2, 3)) {
             assertEquals("cde", new String(in.readAllBytes()));
+        }
+    }
+
+    // ------------------------------------------------------------
+    // getMessageFileChunks
+    // ------------------------------------------------------------
+    @Test
+    void testGetFiddMessageChunks() throws IOException {
+        Path msg = createMessageFolder(1);
+        Path file = msg.resolve("fidd.message");
+        write(file, "abcdefgh");
+
+        FolderFiddConnector fidd = new FolderFiddConnector(temp.toString());
+        com.fidd.connectors.FiddConnector.Chunk<Object> chunk1 = new FiddConnector.Chunk<>(1, 2, new Object());
+        com.fidd.connectors.FiddConnector.Chunk<Object> chunk2 = new FiddConnector.Chunk<>(5, 3, new Object());
+
+        try (InputStream in = fidd.getFiddMessageChunks(1, List.of(chunk1, chunk2))) {
+            assertEquals("bcfgh", new String(in.readAllBytes()));
         }
     }
 

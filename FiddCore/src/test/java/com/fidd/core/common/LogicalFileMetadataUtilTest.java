@@ -86,7 +86,7 @@ public class LogicalFileMetadataUtilTest {
         // --- Execute ---
         Pair<LogicalFileMetadata, MetadataContainer> result =
                 LogicalFileMetadataUtil.getLogicalFileMetadata(
-                        repos, connector, false, 1L, section
+                        repos, stream, section
                 );
 
         // --- Verify ---
@@ -147,7 +147,7 @@ public class LogicalFileMetadataUtilTest {
         }).when(encryption).decrypt(any(), any(), any(), anyBoolean());
 
         var result = LogicalFileMetadataUtil.getLogicalFileMetadata(
-                repos, connector, false, 1L, section
+                repos, stream, section
         );
 
         assertNotNull(result);
@@ -166,7 +166,7 @@ public class LogicalFileMetadataUtilTest {
 
         assertThrows(RuntimeException.class, () ->
                 LogicalFileMetadataUtil.getLogicalFileMetadata(
-                        repos, connector, false, 1L, section
+                        repos, mock(InputStream.class), section
                 )
         );
     }
@@ -200,8 +200,9 @@ public class LogicalFileMetadataUtilTest {
         Repository<LogicalFileMetadataSerializer> logicalFileMetadataFormatRepo = mock(Repository.class);
         when(logicalFileMetadataFormatRepo.get("UNKNOWN")).thenReturn(null);
 
+        InputStream stream = new ByteArrayInputStream(new byte[]{1, 2, 3});
         when(connector.getFiddMessageChunk(anyLong(), anyLong(), anyLong()))
-                .thenReturn(new ByteArrayInputStream(new byte[]{1, 2, 3}));
+                .thenReturn(stream);
 
         doAnswer(invocation -> {
             InputStream in = invocation.getArgument(1);
@@ -212,7 +213,7 @@ public class LogicalFileMetadataUtilTest {
 
         assertThrows(RuntimeException.class, () ->
                 LogicalFileMetadataUtil.getLogicalFileMetadata(
-                        repos, encryption, connector, false, 1L, section, containerSerializer, true
+                        repos, encryption, stream, section, containerSerializer, true
                 )
         );
     }
