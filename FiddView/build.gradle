@@ -9,7 +9,7 @@ plugins {
 }
 
 group 'com.fidd.view'
-version '1.2.12-amd64'
+version '1.3.0-amd64'
 def jpackageVersion = version.toString().replaceFirst(/-.*/, '')
 
 repositories {
