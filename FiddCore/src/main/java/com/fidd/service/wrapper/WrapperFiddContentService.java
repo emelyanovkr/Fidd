@@ -101,6 +101,8 @@ public class WrapperFiddContentService implements FiddContentService {
 
             chunks.sort(Comparator.comparingLong(FiddConnector.Chunk::offset));
 
+            /* TODO: concatenatedChunkStream is only closed indirectly by the last SubInputStream (via closeParent=true).
+                If an exception happens before processing the last chunk, the underlying stream will remain open (resource leak). */
             InputStream concatenatedChunkStream = fiddConnector.getFiddMessageChunks(messageNumber, chunks);
 
             // 3. Load metadata Sections

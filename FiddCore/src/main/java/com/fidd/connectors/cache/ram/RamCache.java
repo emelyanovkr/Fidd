@@ -13,7 +13,7 @@ public class RamCache {
     public final Cache<MessageKey, MessageChunkCache> messageChunkCache;
 
     public RamCache(long fiddKeyCandidatesCacheCapacity, long fiddKeyCacheCapacity,
-                    long unencryptedFiddKeyCacheCapacity, long fiddMessageSizeCacheCapacity) {
+                    long unencryptedFiddKeyCacheCapacity, long fiddMessageChunkCacheCapacity) {
         this.fiddKeyCandidatesCache = Caffeine.newBuilder()
                 .maximumSize(fiddKeyCandidatesCacheCapacity)
                 .build();
@@ -24,7 +24,7 @@ public class RamCache {
                 .maximumSize(unencryptedFiddKeyCacheCapacity)
                 .build();
         this.messageChunkCache = Caffeine.newBuilder()
-                .maximumSize(fiddMessageSizeCacheCapacity)
+                .maximumSize(fiddMessageChunkCacheCapacity)
                 .build();
     }
 

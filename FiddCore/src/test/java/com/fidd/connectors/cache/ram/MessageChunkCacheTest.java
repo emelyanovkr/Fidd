@@ -96,5 +96,27 @@ class MessageChunkCacheTest {
         assertNotNull(cache.get(s(3)));
         assertNotNull(cache.get(s(4)));
     }
-}
 
+    @Test
+    void testEvictManyEldestEntries() {
+        byte[] chunk10k = new byte[10 * 1024];
+        for (int i = 0; i < 10; i++) {
+            cache.put(s(i), chunk10k);
+        }
+
+        // Cache is now full (100k).
+        // Put a larger chunk of 35k. The cache will exceed limit.
+        // It should evict multiple 10k chunks (0, 1, 2, 3) to fall back <= 100k.
+        byte[] chunk35k = new byte[35 * 1024];
+        cache.put(s(10), chunk35k);
+
+        assertNull(cache.get(s(0)), "Chunk 0 should be evicted");
+        assertNull(cache.get(s(1)), "Chunk 1 should be evicted");
+        assertNull(cache.get(s(2)), "Chunk 2 should be evicted");
+        assertNull(cache.get(s(3)), "Chunk 3 should be evicted");
+
+        // Chunk 4 should remain
+        assertNotNull(cache.get(s(4)), "Chunk 4 should remain");
+        assertNotNull(cache.get(s(10)), "Chunk 10 should be present");
+    }
+}

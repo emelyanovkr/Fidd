@@ -13,6 +13,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -212,9 +213,9 @@ public class FiddFileMetadataUtilTest {
         when(section.encryptionAlgorithm()).thenReturn("AES");
 
         InputStream stream = mock(InputStream.class);
-        when(stream.readAllBytes()).thenThrow(new java.io.IOException("boom"));
+        when(stream.readAllBytes()).thenThrow(new IOException("boom"));
 
-        assertThrows(Exception.class, () ->
+        assertThrows(IOException.class, () ->
                 FiddFileMetadataUtil.loadFiddFileMetadata(
                         baseRepositories, stream, section, "json"
                 )

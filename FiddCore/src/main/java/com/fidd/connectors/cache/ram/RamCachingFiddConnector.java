@@ -14,9 +14,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class RamCachingFiddConnector implements FiddConnector {
-    static final long MAX_CHUNK_SIZE = 100L*1024L;
+import static com.fidd.connectors.cache.ram.MessageChunkCache.MAX_CHUNK_SIZE;
 
+public class RamCachingFiddConnector implements FiddConnector {
     protected final RamCache ramCache;
     protected final FiddConnector connector;
     protected final String fiddId;

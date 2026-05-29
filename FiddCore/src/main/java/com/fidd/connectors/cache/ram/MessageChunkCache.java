@@ -5,6 +5,8 @@ import java.util.Map;
 import javax.annotation.Nullable;
 
 public class MessageChunkCache {
+    public static final int MAX_CHUNK_SIZE = 100*1024;
+
     private final int maxSizeBytes;
     private int currentSizeBytes = 0;
 
@@ -13,7 +15,7 @@ public class MessageChunkCache {
     }
 
     public MessageChunkCache() {
-        this(100 * 1024);  // 100 KB hard limit
+        this(MAX_CHUNK_SIZE);  // 100 KB hard limit
     }
 
     // LinkedHashMap in access-order mode (LRU)
@@ -40,9 +42,12 @@ public class MessageChunkCache {
         currentSizeBytes += chunk.length;
         lruMap.put(chunkId, chunk);
 
-        // LinkedHashMap's removeEldestEntry will automatically be called here
-        // Note: If a single chunk is > 100KB, you might need a while loop in removeEldestEntry
-        // to evict multiple items, but typically chunks are fixed size.
+        // Evict as many eldest entries as needed to get back under the limit
+        while (currentSizeBytes > maxSizeBytes && !lruMap.isEmpty()) {
+            Map.Entry<ChunkKey, byte[]> eldest = lruMap.entrySet().iterator().next();
+            currentSizeBytes -= eldest.getValue().length;
+            lruMap.remove(eldest.getKey());
+        }
     }
 
     @Nullable
