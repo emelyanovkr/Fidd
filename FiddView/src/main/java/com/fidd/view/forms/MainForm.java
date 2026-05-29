@@ -4,6 +4,7 @@ import com.fidd.base.BaseRepositories;
 import com.fidd.base.DefaultBaseRepositories;
 import com.fidd.connectors.FiddConnector;
 import com.fidd.connectors.FiddConnectorFactory;
+import com.fidd.connectors.cache.ram.RamCache;
 import com.fidd.core.connection.FiddConnection;
 import com.fidd.core.connection.FiddConnectionList;
 import com.fidd.core.connection.yaml.YamlFiddConnectionListSerializer;
@@ -126,6 +127,8 @@ public class MainForm {
     @Nullable ObservableList<FiddConnection> fiddConnections;
     @Nullable public KeySupplier keySupplier;
 
+    @Nullable public RamCache ramCache;
+
     public MainForm() {
         //This form is created automatically.
         //No need to load fxml explicitly
@@ -137,12 +140,13 @@ public class MainForm {
     }
 
     public void init(Stage mainStage, BaseRepositories repositories, FiddContentServiceCache fiddContentServiceCache,
-                     String fiddApiHost, @Nullable Integer fiddApiPort) {
+                     String fiddApiHost, @Nullable Integer fiddApiPort, @Nullable RamCache ramCache) {
         this.mainStage = mainStage;
         this.repositories = repositories;
         this.fiddContentServiceCache = fiddContentServiceCache;
         this.fiddApiHost = fiddApiHost;
         this.fiddApiPort = fiddApiPort == null || fiddApiPort == DEFAULT_HTTP_PORT ? null : fiddApiPort;
+        this.ramCache = ramCache;
 
         keyProvider = buildMainKeyProvider(mainStage);
         AnchorPane keyProviderForm = keyProvider.tabContent();
@@ -241,16 +245,21 @@ public class MainForm {
         mainTabPane.getSelectionModel().select(tab);
     }
 
-    FiddContentService getFiddContentServiceForConnection(FiddConnection fiddConnection) {
+    FiddContentService getFiddContentServiceForConnection(String fiddId, FiddConnection fiddConnection) {
         FiddConnectorFactory fiddConnectorFactory = BASE_REPOSITORIES.fiddConnectorFactoryRepo().get(fiddConnection.connectorType());
         FiddConnector fiddConnector = checkNotNull(fiddConnectorFactory).createConnector(fiddConnection.url());
+        if (ramCache != null) {
+            fiddConnector = ramCache.createCachingConnector(fiddId, fiddConnector);
+        }
+
         return new WrapperFiddContentService(BASE_REPOSITORIES, fiddConnector, keySupplier);
     }
 
     protected void addFiddConnection(FiddConnection fiddConnection) {
         Platform.runLater(() -> {
+            String fiddId = fiddConnection.name();
             checkNotNull(fiddConnections).add(fiddConnection);
-            checkNotNull(fiddContentServiceCache).addServiceIfAbsent(fiddConnection.name(), getFiddContentServiceForConnection(fiddConnection));
+            checkNotNull(fiddContentServiceCache).addServiceIfAbsent(fiddId, getFiddContentServiceForConnection(fiddId, fiddConnection));
             checkNotNull(fiddConnectionTableView).refresh();
         });
     }
@@ -287,9 +296,10 @@ public class MainForm {
         try {
             FiddConnection selectedFiddConnection = checkNotNull(fiddConnectionTableView).getSelectionModel().getSelectedItem();
             if (selectedFiddConnection != null) {
+                String fiddId = selectedFiddConnection.name();
                 checkNotNull(fiddConnections).remove(selectedFiddConnection);
                 checkNotNull(fiddConnectionTableView).refresh();
-                checkNotNull(fiddContentServiceCache).removeService(selectedFiddConnection.name());
+                checkNotNull(fiddContentServiceCache).removeService(fiddId);
             }
         } catch (Exception e) {
             Alert alert = new Alert(Alert.AlertType.ERROR, "Error Removing Fidd connection: " + e, ButtonType.OK);
@@ -316,11 +326,12 @@ public class MainForm {
                             try {
                                 FiddConnection fiddConnection = fiddConnectionAddDialog.getFiddConnection();
                                 if (fiddConnection != null) {
+                                    String fiddId = fiddConnection.name();
                                     FiddConnection oldFiddConnection = checkNotNull(fiddConnections).remove(selectedIndex);
                                     checkNotNull(fiddConnections).add(selectedIndex, fiddConnection);
 
                                     checkNotNull(fiddContentServiceCache).removeService(oldFiddConnection.name());
-                                    checkNotNull(fiddContentServiceCache).addServiceIfAbsent(fiddConnection.name(), getFiddContentServiceForConnection(fiddConnection));
+                                    checkNotNull(fiddContentServiceCache).addServiceIfAbsent(fiddId, getFiddContentServiceForConnection(fiddId, fiddConnection));
 
                                     checkNotNull(fiddConnectionTableView).refresh();
                                 }
@@ -538,7 +549,8 @@ public class MainForm {
 
                 checkNotNull(fiddContentServiceCache).clear();
                 for (FiddConnection fiddConnection : fiddConnectionList.fiddConnectionList()) {
-                    checkNotNull(fiddContentServiceCache).addServiceIfAbsent(fiddConnection.name(), getFiddContentServiceForConnection(fiddConnection));
+                    String fiddId = fiddConnection.name();
+                    checkNotNull(fiddContentServiceCache).addServiceIfAbsent(fiddConnection.name(), getFiddContentServiceForConnection(fiddId, fiddConnection));
                 }
             }
         } catch (Exception e) {

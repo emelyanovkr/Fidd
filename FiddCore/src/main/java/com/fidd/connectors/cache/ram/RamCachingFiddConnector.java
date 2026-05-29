@@ -1,0 +1,123 @@
+package com.fidd.connectors.cache.ram;
+
+import com.fidd.connectors.FiddConnector;
+
+import javax.annotation.Nullable;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.List;
+
+public class RamCachingFiddConnector implements FiddConnector {
+    protected final RamCache ramCache;
+    protected final FiddConnector connector;
+    protected final String fiddId;
+
+    public RamCachingFiddConnector(RamCache ramCache, String fiddId, FiddConnector underlyingConnector) {
+        this.ramCache = ramCache;
+        this.connector = underlyingConnector;
+        this.fiddId = fiddId;
+    }
+
+    @Override
+    public List<Long> getMessageNumbersTail(int count) {
+        return connector.getMessageNumbersTail(count);
+    }
+
+    @Override
+    public List<Long> getMessageNumbersBefore(long messageNumber, int count, boolean inclusive) {
+        return connector.getMessageNumbersBefore(messageNumber, count, inclusive);
+    }
+
+    @Override
+    public List<Long> getMessageNumbersBetween(long latestMessage, boolean inclusiveLatest, long earliestMessage,
+                                               boolean inclusiveEarliest, int count, boolean getLatest) {
+        return connector.getMessageNumbersBetween(latestMessage, inclusiveLatest, earliestMessage, inclusiveEarliest, count, getLatest);
+    }
+
+    @Override
+    public long getFiddMessageSize(long messageNumber) {
+        return connector.getFiddMessageSize(messageNumber);
+    }
+
+    @Override
+    public InputStream getFiddMessageChunk(long messageNumber, long offset, long length) {
+
+        /*TODO: !!!! implementation HERE !!!!
+
+        MessageChunkCache chunkCache = messageChunkCache.getIfPresent(messageNumber);
+        if (chunkCache != null) {
+            byte[]
+        }*/
+
+        return connector.getFiddMessageChunk(messageNumber, offset, length);
+    }
+
+    @Override
+    public InputStream getFiddMessageChunks(long messageNumber, List<? extends Chunk<?>> chunks) {
+        return connector.getFiddMessageChunks(messageNumber, chunks);
+    }
+
+    @Override
+    public int getFiddKeySignatureCount(long messageNumber) {
+        return connector.getFiddKeySignatureCount(messageNumber);
+    }
+
+    @Override
+    public byte[] getFiddKeySignature(long messageNumber, int index) {
+        return connector.getFiddKeySignature(messageNumber, index);
+    }
+
+    @Override
+    public int getFiddMessageSignatureCount(long messageNumber) {
+        return connector.getFiddMessageSignatureCount(messageNumber);
+    }
+
+    @Override
+    public byte[] getFiddMessageSignature(long messageNumber, int index) {
+        return connector.getFiddMessageSignature(messageNumber, index);
+    }
+
+    // TODO: what if access was granted after caching event, need to invalidate by request?
+    //  M.B. approve proper candidate callback on connector interface level?
+    //  M.B. also support invalidation of cache on connector interface level?
+    //  M.B. create a cache connector interface with invalidation methods then? - to support smth like "hard refresh" in UI on content service API?
+    @Override
+    public List<byte[]> getFiddKeyCandidates(long messageNumber, byte[] footprint) throws IOException {
+        MessageElementKey cacheKey = new MessageElementKey(fiddId, messageNumber, footprint);
+        List<byte[]> keyCandidates = ramCache.fiddKeyCandidatesCache.getIfPresent(cacheKey);
+        if (keyCandidates == null) {
+            keyCandidates = connector.getFiddKeyCandidates(messageNumber, footprint);
+            if (keyCandidates != null && !keyCandidates.isEmpty()) {
+                ramCache.fiddKeyCandidatesCache.put(cacheKey, keyCandidates);
+            }
+        }
+        return keyCandidates;
+    }
+
+    @Override
+    public @Nullable byte[] getFiddKey(long messageNumber, byte[] key) {
+        MessageElementKey cacheKey = new MessageElementKey(fiddId, messageNumber, key);
+        byte[] fiddKey = ramCache.fiddKeyCache.getIfPresent(cacheKey);
+        if (fiddKey == null) {
+            fiddKey = connector.getFiddKey(messageNumber, key);
+            if (fiddKey != null) {
+                ramCache.fiddKeyCache.put(cacheKey, fiddKey);
+            }
+        }
+        return fiddKey;
+    }
+
+    @Override
+    public @Nullable byte[] getUnencryptedFiddKey(long messageNumber) {
+        MessageKey messageKey = new MessageKey(fiddId, messageNumber);
+        byte[] unencryptedFiddKey = ramCache.unencryptedFiddKeyCache.getIfPresent(messageKey);
+        if (unencryptedFiddKey == null) {
+            unencryptedFiddKey = connector.getUnencryptedFiddKey(messageNumber);
+            if (unencryptedFiddKey != null) {
+                ramCache.unencryptedFiddKeyCache.put(messageKey, unencryptedFiddKey);
+            }
+        }
+        return unencryptedFiddKey;
+    }
+
+}

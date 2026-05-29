@@ -2,6 +2,7 @@ package com.fidd.view;
 
 import com.fidd.base.BaseRepositories;
 import com.fidd.base.DefaultBaseRepositories;
+import com.fidd.connectors.cache.ram.RamCache;
 import com.fidd.view.forms.MainForm;
 import com.fidd.view.rest.invoker.FiddHttpServerVerticle;
 import com.fidd.view.serviceCache.FiddContentServiceCache;
@@ -22,6 +23,11 @@ import org.slf4j.LoggerFactory;
  */
 public class App extends Application {
     final static Logger LOGGER = LoggerFactory.getLogger(App.class);
+
+    final static long FIDD_KEY_CANDIDATES_CACHE_CAPACITY = 1024;
+    final static long FIDD_KEY_CACHE_CAPACITY = 1024;
+    final static long UNENCRYPTED_FIDD_KEY_CACHE_CAPACITY = 1024;
+    final static long FIDD_MESSAGE_CHUNK_CACHE_CAPACITY = 1024;
 
     public static void main(String[] args) {
         launch();
@@ -49,11 +55,13 @@ public class App extends Application {
                         vertx.close();
                     });
 
-            // HttpFiddApiServer server = HttpFiddApiServer.runServer(fiddContentServiceCache, repositories, fiddApiServerPort);
-            LOGGER.info("Started HTTP API server on port {}", fiddApiServerPort);
+            LOGGER.info("Started FiddContentService HTTP/REST API server on port {}", fiddApiServerPort);
+
+            RamCache ramCache = new RamCache(FIDD_KEY_CANDIDATES_CACHE_CAPACITY, FIDD_KEY_CACHE_CAPACITY,
+                    UNENCRYPTED_FIDD_KEY_CACHE_CAPACITY, FIDD_MESSAGE_CHUNK_CACHE_CAPACITY);
 
             MainForm mainForm = fxmlLoader.getController();
-            mainForm.init(mainStage, repositories, fiddContentServiceCache, "localhost", fiddApiServerPort);
+            mainForm.init(mainStage, repositories, fiddContentServiceCache, "localhost", fiddApiServerPort, ramCache);
 
             Scene mainScene = new Scene(rootNode, 1024, 768);
 
