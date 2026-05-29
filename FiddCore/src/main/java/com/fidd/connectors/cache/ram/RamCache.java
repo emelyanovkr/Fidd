@@ -31,4 +31,8 @@ public class RamCache {
     public FiddConnector createCachingConnector(String fiddId, FiddConnector underlyingConnector) {
         return new RamCachingFiddConnector(this, fiddId, underlyingConnector);
     }
+
+    public MessageChunkCache getOrCreateMessageChunkCache(MessageKey messageKey) {
+        return messageChunkCache.get(messageKey, k -> new MessageChunkCache());
+    }
 }

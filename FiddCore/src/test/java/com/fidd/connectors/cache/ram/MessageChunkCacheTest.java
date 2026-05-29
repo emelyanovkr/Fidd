@@ -9,8 +9,8 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 
 class MessageChunkCacheTest {
 
-    static MessageChunkCache.SimpleKey s(int i) {
-        return new MessageChunkCache.SimpleKey(i,i);
+    static ChunkKey s(int i) {
+        return new ChunkKey(i,i);
     }
 
     private MessageChunkCache cache;

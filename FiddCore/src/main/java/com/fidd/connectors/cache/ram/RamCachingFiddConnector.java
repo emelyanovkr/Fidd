@@ -1,13 +1,22 @@
 package com.fidd.connectors.cache.ram;
 
 import com.fidd.connectors.FiddConnector;
+import com.fidd.core.common.SubInputStream;
 
 import javax.annotation.Nullable;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.SequenceInputStream;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class RamCachingFiddConnector implements FiddConnector {
+    static final long MAX_CHUNK_SIZE = 100L*1024L;
+
     protected final RamCache ramCache;
     protected final FiddConnector connector;
     protected final String fiddId;
@@ -41,20 +50,67 @@ public class RamCachingFiddConnector implements FiddConnector {
 
     @Override
     public InputStream getFiddMessageChunk(long messageNumber, long offset, long length) {
-
-        /*TODO: !!!! implementation HERE !!!!
-
-        MessageChunkCache chunkCache = messageChunkCache.getIfPresent(messageNumber);
-        if (chunkCache != null) {
-            byte[]
-        }*/
-
-        return connector.getFiddMessageChunk(messageNumber, offset, length);
+        MessageKey messageKey = new MessageKey(fiddId, messageNumber);
+        MessageChunkCache messageChunkCache = ramCache.getOrCreateMessageChunkCache(messageKey);
+        byte[] chunkBytes = messageChunkCache.get(new ChunkKey(offset, length));
+        if (chunkBytes != null) {
+            return new ByteArrayInputStream(chunkBytes);
+        } else {
+            // Don't populate cache in this method
+            return connector.getFiddMessageChunk(messageNumber, offset, length);
+        }
     }
 
     @Override
     public InputStream getFiddMessageChunks(long messageNumber, List<? extends Chunk<?>> chunks) {
-        return connector.getFiddMessageChunks(messageNumber, chunks);
+        MessageKey messageKey = new MessageKey(fiddId, messageNumber);
+        MessageChunkCache messageChunkCache = ramCache.getOrCreateMessageChunkCache(messageKey);
+
+        Map<Chunk<?>, byte[]> cacheChunksMap = new HashMap<>();
+        List<Chunk<?>> chunksToLoad = new ArrayList<>();
+
+        for (Chunk<?> chunk : chunks) {
+            byte[] chunkBytes = messageChunkCache.get(new ChunkKey(chunk.offset(), chunk.length()));
+            if (chunkBytes != null) {
+                cacheChunksMap.put(chunk, chunkBytes);
+            } else {
+                chunksToLoad.add(chunk);
+            }
+        }
+
+        List<InputStream> streams = new ArrayList<>();
+        if (chunksToLoad.isEmpty()) {
+            for (Chunk<?> chunk : chunks) {
+                streams.add(new ByteArrayInputStream(cacheChunksMap.get(chunk)));
+            }
+        } else {
+            InputStream chunkStream = connector.getFiddMessageChunks(messageNumber, chunksToLoad);
+            int loadedChunkIndex = 0;
+            for (Chunk<?> chunk : chunks) {
+                byte[] chunkBytes = cacheChunksMap.get(chunk);
+                if (chunkBytes != null) {
+                    streams.add(new ByteArrayInputStream(cacheChunksMap.get(chunk)));
+                } else {
+                    Chunk<?> sanityCheck = chunksToLoad.get(loadedChunkIndex);
+                    if (sanityCheck != chunk) {
+                        throw new RuntimeException("SanityCheck failed - loaded chunk mismatch");
+                    }
+
+                    try {
+                        boolean isLastLoadedChunk = loadedChunkIndex == chunksToLoad.size() - 1;
+                        SubInputStream subStream = new SubInputStream(chunkStream, 0, chunk.length(), isLastLoadedChunk);
+                        streams.add(subStream);
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                    }
+
+                    loadedChunkIndex++;
+                }
+            }
+        }
+
+        InputStream mergedInputStream = new SequenceInputStream(Collections.enumeration(streams));
+        return new ChunkCachingInputStream(fiddId, messageNumber, ramCache, MAX_CHUNK_SIZE, mergedInputStream, chunks);
     }
 
     @Override

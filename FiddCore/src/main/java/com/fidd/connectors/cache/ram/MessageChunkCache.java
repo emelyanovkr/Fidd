@@ -5,8 +5,6 @@ import java.util.Map;
 import javax.annotation.Nullable;
 
 public class MessageChunkCache {
-    public record SimpleKey(long offset, long length) { }
-
     private final int maxSizeBytes;
     private int currentSizeBytes = 0;
 
@@ -19,9 +17,9 @@ public class MessageChunkCache {
     }
 
     // LinkedHashMap in access-order mode (LRU)
-    private final Map<SimpleKey, byte[]> lruMap = new LinkedHashMap<>(16, 0.75f, true) {
+    private final Map<ChunkKey, byte[]> lruMap = new LinkedHashMap<>(16, 0.75f, true) {
         @Override
-        protected boolean removeEldestEntry(Map.Entry<SimpleKey, byte[]> eldest) {
+        protected boolean removeEldestEntry(Map.Entry<ChunkKey, byte[]> eldest) {
             // Evict until we are under the limit
             if (currentSizeBytes > maxSizeBytes) {
                 currentSizeBytes -= eldest.getValue().length;
@@ -32,7 +30,7 @@ public class MessageChunkCache {
     };
 
     // Thread-safe access for concurrent requests to the SAME message
-    public synchronized void put(SimpleKey chunkId, byte[] chunk) {
+    public synchronized void put(ChunkKey chunkId, byte[] chunk) {
         // If updating an existing chunk, adjust size first
         byte[] existing = lruMap.get(chunkId);
         if (existing != null) {
@@ -48,7 +46,7 @@ public class MessageChunkCache {
     }
 
     @Nullable
-    public synchronized byte[] get(SimpleKey chunkId) {
+    public synchronized byte[] get(ChunkKey chunkId) {
         return lruMap.get(chunkId); // automatically updates LRU access order
     }
 }
