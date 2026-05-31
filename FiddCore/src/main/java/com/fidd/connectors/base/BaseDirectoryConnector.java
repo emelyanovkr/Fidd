@@ -10,6 +10,7 @@ import javax.annotation.Nullable;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -42,12 +43,17 @@ public abstract class BaseDirectoryConnector implements FiddConnector {
     protected final Cache<String, FileInfo> fileInfoCache = Caffeine.newBuilder().maximumSize(1024).build();
 
     protected FileInfo getFileInfo(String path) throws IOException {
-        FileInfo fileInfo = fileInfoCache.getIfPresent(path);
-        if (fileInfo == null) {
-            fileInfo = getFileInfoInternal(path);
-            fileInfoCache.put(path, fileInfo);
+        try {
+            return fileInfoCache.get(path, p -> {
+                try {
+                    return getFileInfoInternal(p);
+                } catch (IOException e) {
+                    throw new UncheckedIOException(e);
+                }
+            });
+        } catch (UncheckedIOException e) {
+            throw e.getCause();
         }
-        return fileInfo;
     }
 
     protected abstract FileInfo getFileInfoInternal(String path) throws FileNotFoundException, IOException;
