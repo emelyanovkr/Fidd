@@ -153,7 +153,7 @@ public class FiddViewForm extends AnchorPane  {
     protected final AtomicBoolean loading = new AtomicBoolean(false);
     protected @Nullable Long lastContiguouslyLoadedMessageNumber = null;
 
-    public FiddViewForm(String fiddName, FiddContentService fiddContentService, String fiddApiHost, @Nullable Integer fiddApiPort) {
+    public FiddViewForm(String fiddName, FiddContentService fiddContentService, String fiddApiHost, @Nullable Integer fiddFileDownloadPort) {
         FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("FiddViewForm.fxml"));
         fxmlLoader.setRoot(this);
         fxmlLoader.setController(this);
@@ -172,7 +172,7 @@ public class FiddViewForm extends AnchorPane  {
         }
 
         this.fiddName = fiddName;
-        this.fiddApiServerAndPort = fiddApiHost + (fiddApiPort != null ? (":" + fiddApiPort) : "");
+        this.fiddApiServerAndPort = fiddApiHost + (fiddFileDownloadPort != null ? (":" + fiddFileDownloadPort) : "");
         this.fiddContentService = fiddContentService;
 
         // Attach context menu to tree cells

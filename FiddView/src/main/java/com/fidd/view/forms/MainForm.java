@@ -114,7 +114,7 @@ public class MainForm {
     @Nullable BaseRepositories repositories;
     @Nullable FiddContentServiceCache fiddContentServiceCache;
     @Nullable String fiddApiHost;
-    @Nullable Integer fiddApiPort;
+    @Nullable Integer fiddFileDownloadPort;
 
     @FXML @Nullable TabPane mainTabPane;
     @FXML @Nullable Tab fiddConnectionsTab;
@@ -140,12 +140,12 @@ public class MainForm {
     }
 
     public void init(Stage mainStage, BaseRepositories repositories, FiddContentServiceCache fiddContentServiceCache,
-                     String fiddApiHost, @Nullable Integer fiddApiPort, @Nullable RamCache ramCache) {
+                     String fiddApiHost, @Nullable Integer fiddFileDownloadPort, @Nullable RamCache ramCache) {
         this.mainStage = mainStage;
         this.repositories = repositories;
         this.fiddContentServiceCache = fiddContentServiceCache;
         this.fiddApiHost = fiddApiHost;
-        this.fiddApiPort = fiddApiPort == null || fiddApiPort == DEFAULT_HTTP_PORT ? null : fiddApiPort;
+        this.fiddFileDownloadPort = fiddFileDownloadPort == null || fiddFileDownloadPort == DEFAULT_HTTP_PORT ? null : fiddFileDownloadPort;
         this.ramCache = ramCache;
 
         keyProvider = buildMainKeyProvider(mainStage);
@@ -232,7 +232,7 @@ public class MainForm {
         }
 
         FiddContentService fiddContentService = checkNotNull(fiddContentServiceCache).getService(fiddConnection.name());
-        FiddViewForm fiddViewForm = new FiddViewForm(fiddConnection.name(), checkNotNull(fiddContentService), checkNotNull(fiddApiHost), fiddApiPort);
+        FiddViewForm fiddViewForm = new FiddViewForm(fiddConnection.name(), checkNotNull(fiddContentService), checkNotNull(fiddApiHost), fiddFileDownloadPort);
         fiddViewForm.setStage(checkNotNull(mainStage));
         final Tab tab = new Tab(fiddConnection.name(), fiddViewForm);
         tab.setClosable(true);

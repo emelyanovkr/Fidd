@@ -54,6 +54,7 @@ import java.net.URI;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Comparator;
@@ -68,6 +69,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static com.fidd.core.common.Format.FMT;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static io.netty.handler.codec.http.HttpHeaderNames.ACCEPT_RANGES;
 import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_RANGE;
@@ -128,8 +130,8 @@ public class HttpFiddApiServerHandler extends SimpleChannelInboundHandler<FullHt
   public static final String HTTP_DATE_GMT_TIMEZONE = "GMT";
   public static final int HTTP_CACHE_SECONDS = 60;
 
-  public static final Pattern URI_PATTERN = Pattern.compile("^/([^/]+)/([^/]+)/(.*)$");
-  private static final Pattern INSECURE_URI = Pattern.compile(".*[<>&\"].*");
+  public static final Pattern URI_PATTERN = Pattern.compile("^/fidds/v1/([^/]+)/([^/]+)/(.*)$");
+  //private static final Pattern INSECURE_URI = Pattern.compile(".*[<>&\"].*");
 
 
   public static final AtomicInteger TRANSFERS = new AtomicInteger();
@@ -401,7 +403,7 @@ public class HttpFiddApiServerHandler extends SimpleChannelInboundHandler<FullHt
 
     long fileLengthEncrypted = logicalFileInfo.section().sectionLength();
     EncryptionAlgorithm encryptionAlgorithm = baseRepositories.encryptionAlgorithmRepo().get(logicalFileInfo.section().encryptionAlgorithm());
-    long fileLength = checkNotNull(encryptionAlgorithm).plaintextLengthToCiphertextLength(fileLengthEncrypted);
+    long fileLength = checkNotNull(encryptionAlgorithm).ciphertextLengthToPlaintextLength(fileLengthEncrypted);
 
     HttpResponse response;
     InputStream responseFileStream;
@@ -410,6 +412,7 @@ public class HttpFiddApiServerHandler extends SimpleChannelInboundHandler<FullHt
     boolean headersGotRange = request.headers() != null && request.headers().contains(HttpHeaderNames.RANGE);
     if (!headersGotRange) {
       response = new DefaultHttpResponse(HTTP_1_1, OK);
+      //System.out.println(FMT.format(Instant.now()) + " ReadLogicalFile in full for file length " + fileLength);
       HttpUtil.setContentLength(response, fileLength);
 
       responseFileStream = fiddService.readLogicalFile(messageNumber, logicalFileInfo);
@@ -456,6 +459,7 @@ public class HttpFiddApiServerHandler extends SimpleChannelInboundHandler<FullHt
       response.headers().set(ACCEPT_RANGES, "bytes");
 
       responseFileStream = fiddService.readLogicalFileChunk(messageNumber, logicalFileInfo, startPos, contentLength);
+      //System.out.println(FMT.format(Instant.now()) + " ReadLogicalFileChunk for range " + startPos + "-" + endPos + " (content length: " + contentLength + ")");
       if (responseFileStream == null) {
         sendError(ctx, NOT_FOUND);
         return;
@@ -463,6 +467,7 @@ public class HttpFiddApiServerHandler extends SimpleChannelInboundHandler<FullHt
 
       int transfers = TRANSFERS.incrementAndGet();
       LOGGER.info("{} File: {}. act={} st={} end={} len={}  Chunked rng transfer started.", ctx.channel().id(), filePath, transfers, startPos, endPos, contentLength);
+      //System.out.printf(FMT.format(Instant.now()) + " %s File: %s. act=%s st=%s end=%s len=%s  Chunked rng transfer started.", ctx.channel().id(), filePath, transfers, startPos, endPos, contentLength);
     }
 
     setContentTypeHeader(response, path);
@@ -486,20 +491,42 @@ public class HttpFiddApiServerHandler extends SimpleChannelInboundHandler<FullHt
     // HttpChunkedInput writes LastHttpContent automatically
     lastContentFuture = sendFileFuture;
 
+    final InputStream streamToClose = responseFileStream;
+
     sendFileFuture.addListener(new ChannelProgressiveFutureListener() {
+      //private long lastProgress = 0;
+
       @Override
       public void operationProgressed(ChannelProgressiveFuture future, long progress, long total) {
-        if (total < 0) { // total unknown
-          LOGGER.debug("{} File: {}. Transfer progress: {}", future.channel().id(), filePath, progress);
-        } else {
-          LOGGER.debug("{} File: {}. Transfer progress: {} / {}", future.channel().id(), filePath, progress, total);
-        }
+        //lastProgress = progress;
+        //if (total < 0) { // total unknown
+          // System.out.printf(FMT.format(Instant.now()) + " %s File: %s. Transfer progress: %d\n", future.channel().id(), filePath, progress);
+        //} else {
+          // System.out.printf(FMT.format(Instant.now()) + " %s File: %s. Transfer progress: %d / %d\n", future.channel().id(), filePath, progress, total);
+        //}
       }
 
       @Override
       public void operationComplete(ChannelProgressiveFuture future) {
         int transfers = TRANSFERS.decrementAndGet();
-        LOGGER.info("{} File: {}. act={} Transfer complete.", future.channel().id(), filePath, transfers);
+        if (future.isSuccess()) {
+          //System.out.printf(FMT.format(Instant.now()) + " COMPLETE FINISH %s File: %s. act=%d Transfer complete. Data transferred: %d\n", future.channel().id(), filePath, transfers, lastProgress);
+        } else {
+          Throwable cause = future.cause();
+          boolean isClosed = (cause instanceof java.nio.channels.ClosedChannelException) ||
+                             (cause instanceof java.io.IOException && cause.getMessage() != null && cause.getMessage().contains("Connection reset by peer"));
+          //System.out.printf(FMT.format(Instant.now()) + " ERROR FINISH %s File: %s. act=%d Transfer stopped. Data transferred: %d. Connection closed: %b | %s\n", future.channel().id(), filePath, transfers, lastProgress, isClosed, cause);
+
+          try {
+            if (streamToClose != null) {
+              streamToClose.close();
+            }
+            System.out.printf(FMT.format(Instant.now()) + "CLOSED STREAM for %s File: %s\n", future.channel().id(), filePath);
+          } catch (java.io.IOException e) {
+            System.out.printf(FMT.format(Instant.now()) + "FAILED TO CLOSE STREAM for %s File: %s | %3\n", future.channel().id(), filePath, e.getMessage());
+            LOGGER.warn("Failed to close input stream on ERROR FINISH for file: {}", filePath, e);
+          }
+        }
       }
     });
 
