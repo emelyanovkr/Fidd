@@ -72,7 +72,7 @@ public class FolderFiddConnector extends BaseDirectoryConnector implements FiddC
                     try {
                         fileListInfos.add(new FileListInfo(childPath.toString(), Files.isDirectory(childPath)));
                     } catch(Exception e) {
-                        LOGGER.debug("Fidd subfolder is not a message / message number parse error", e);
+                        LOGGER.debug("Fidd subfolder is not a message / message number parse error: {}", childPath, e);
                     }
                 }
             } catch (IOException e) {
