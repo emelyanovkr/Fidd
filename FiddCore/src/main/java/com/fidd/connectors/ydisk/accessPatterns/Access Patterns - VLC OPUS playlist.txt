@@ -1,0 +1,70 @@
+http://localhost:8080/ydisk/60/?list=m3u&filterIn=*.mp3&filterIn=*.opus&filterOut=*._*&sort=NUMERICAL_ASC&includeSubfolders=false
+
+-------------------------------------
+
+VLC transfer
+
+[we got the playlist straight from the cache]
+
+SONG 1
+
+2026-05-31 02:14:59.953 getSubInputStream: /60/fidd.message, offset: 67160681, length: 6156105
+[wait before 1st file transfer starts, 7 seconds]
+2026-05-31 02:15:06.817 ReadLogicalFileChunk for range 0-6156104 (content length: 6156105)
+2026-05-31 02:15:06.828 e5a991d9 File: 1 SONG_1.opus. act=1 st=0 end=6156104 len=6156105  Chunked rng transfer started.
+
+2026-05-31 02:15:07.468 getSubInputStream: /60/fidd.message, offset: 73308286, length: 8500
+[wait before 2nd file transfer starts, 1 second]
+2026-05-31 02:15:08.525 ReadLogicalFileChunk for range 6147605-6156104 (content length: 8500)
+2026-05-31 02:15:08.526 8a3bb7e9 File: 1 SONG_1.opus. act=2 st=6147605 end=6156104 len=8500  Chunked rng transfer started.
+
+2026-05-31 02:15:08.532 ERROR FINISH e5a991d9 File: 1 SONG_1.opus. act=1 Transfer stopped. Data transferred: 0. Connection closed: false | java.io.IOException: Broken pipe
+
+2026-05-31 02:15:08.624 COMPLETE FINISH 8a3bb7e9 File: 1 SONG_1.opus. act=0 Transfer complete. Data transferred: 0
+
+2026-05-31 02:15:08.970 getSubInputStream: /60/fidd.message, offset: 73299786, length: 17000
+[wait before 3rd file transfer starts, 2 seconds]
+2026-05-31 02:15:10.245 ReadLogicalFileChunk for range 6139105-6156104 (content length: 17000)
+2026-05-31 02:15:10.246 c68566f3 File: 1 SONG_1.opus. act=1 st=6139105 end=6156104 len=17000  Chunked rng transfer started.
+
+2026-05-31 02:15:10.413 COMPLETE FINISH c68566f3 File: 1 SONG_1.opus. act=0 Transfer complete. Data transferred: 0
+
+2026-05-31 02:15:10.778 getSubInputStream: /60/fidd.message, offset: 67169181, length: 6147605
+[wait before 4th file transfer starts, 8 seconds]
+2026-05-31 02:15:18.045 ReadLogicalFileChunk for range 8500-6156104 (content length: 6147605)
+2026-05-31 02:15:18.045 632d173c File: 1 SONG_1.opus. act=1 st=8500 end=6156104 len=6147605  Chunked rng transfer started.
+[15.7 mb downloaded in 1 minute 23 seconds]
+2026-05-31 02:15:49.335 COMPLETE FINISH 632d173c File: 1 SONG_1.opus. act=0 Transfer complete. Data transferred: 0
+
+SONG 2
+
+2026-05-31 02:19:24.396 getSubInputStream: /60/fidd.message, offset: 60899406, length: 6261275
+[wait before 1st file transfer starts, 7 seconds]
+2026-05-31 02:19:31.598 ReadLogicalFileChunk for range 0-6261274 (content length: 6261275)
+2026-05-31 02:19:31.598 27490273 File: 2 SONG_2.opus. act=1 st=0 end=6261274 len=6261275  Chunked rng transfer started.
+
+2026-05-31 02:19:32.035 getSubInputStream: /60/fidd.message, offset: 67152181, length: 8500
+[wait before 2nd file transfer starts, 2 seconds]
+2026-05-31 02:19:34.087 ReadLogicalFileChunk for range 6252775-6261274 (content length: 8500)
+2026-05-31 02:19:34.087 407fc425 File: 2 SONG_2.opus. act=2 st=6252775 end=6261274 len=8500  Chunked rng transfer started.
+
+2026-05-31 02:19:34.090 ERROR FINISH 27490273 File: 2 SONG_2.opus. act=1 Transfer stopped. Data transferred: 0. Connection closed: false | java.io.IOException: Broken pipe
+
+2026-05-31 02:19:34.140 COMPLETE FINISH 407fc425 File: 2 SONG_2.opus. act=0 Transfer complete. Data transferred: 0
+
+2026-05-31 02:19:34.488 getSubInputStream: /60/fidd.message, offset: 67143681, length: 17000
+[wait before 3rd file transfer starts, 1 second]
+2026-05-31 02:19:35.727 ReadLogicalFileChunk for range 6244275-6261274 (content length: 17000)
+2026-05-31 02:19:35.728 926cdb07 File: 2 SONG_2.opus. act=1 st=6244275 end=6261274 len=17000  Chunked rng transfer started.
+
+2026-05-31 02:19:35.880 COMPLETE FINISH 926cdb07 File: 2 SONG_2.opus. act=0 Transfer complete. Data transferred: 0
+
+2026-05-31 02:19:36.246 getSubInputStream: /60/fidd.message, offset: 60907906, length: 6252775
+[wait before 4th file transfer starts, 6 seconds]
+2026-05-31 02:19:43.658 ReadLogicalFileChunk for range 8500-6261274 (content length: 6252775)
+2026-05-31 02:19:43.658 5d87f482 File: 2 SONG_2.opus. act=1 st=8500 end=6261274 len=6252775  Chunked rng transfer started.
+[started playing here]
+2026-05-31 02:20:16.086 COMPLETE FINISH 5d87f482 File: 2 SONG_2.opus. act=0 Transfer complete. Data transferred: 0
+
+
+etc.

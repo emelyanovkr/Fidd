@@ -1,0 +1,48 @@
+2026-05-31 01:40:31.202 getFileInfoInternal: /
+
+[MSG 1: Find key file - 2 sec]
+2026-05-31 01:40:33.590 getFileInfoInternal: /61/fidd.message
+2026-05-31 01:40:34.094 getFileInfoInternal: /61/keys
+2026-05-31 01:40:34.653 getFileInfoInternal: /61/keys/8.fidd.key.crypt
+
+[MSG 1: Read key file - 7 sec]
+2026-05-31 01:40:35.140 readAllBytes: /61/keys/8.fidd.key.crypt
+2026-05-31 01:40:39.564 getSubInputStream: /61/fidd.message, offset: 117792138, length: 11288
+
+[MSG 2: Find key file - 2 sec]
+2026-05-31 01:40:42.353 getFileInfoInternal: /60/fidd.message
+2026-05-31 01:40:42.932 getFileInfoInternal: /60/keys
+2026-05-31 01:40:43.501 getFileInfoInternal: /60/keys/U.fidd.key.crypt
+
+[MSG 2: Read key file - 6 sec]
+2026-05-31 01:40:44.092 readAllBytes: /60/keys/U.fidd.key.crypt
+2026-05-31 01:40:47.043 getSubInputStream: /60/fidd.message, offset: 37095596, length: 16944
+
+[MSG 3: Find key file - 2 sec]
+2026-05-31 01:40:49.875 getFileInfoInternal: /59/fidd.message
+2026-05-31 01:40:50.623 getFileInfoInternal: /59/keys
+2026-05-31 01:40:51.161 getFileInfoInternal: /59/keys/T.fidd.key.crypt
+
+[MSG 3: Read key file - 6 sec]
+2026-05-31 01:40:51.752 readAllBytes: /59/keys/T.fidd.key.crypt
+2026-05-31 01:40:54.416 getSubInputStream: /59/fidd.message, offset: 0, length: 3472
+
+[MSG 4: Find key file - 2 sec]
+2026-05-31 01:40:57.094 getFileInfoInternal: /58/fidd.message
+2026-05-31 01:40:57.559 getFileInfoInternal: /58/keys
+2026-05-31 01:40:58.209 getFileInfoInternal: /58/keys/1.fidd.key.crypt
+
+[MSG 4: Read key file - 6 sec]
+2026-05-31 01:40:58.719 readAllBytes: /58/keys/1.fidd.key.crypt
+2026-05-31 01:41:01.494 getSubInputStream: /58/fidd.message, offset: 72130560, length: 3280
+
+[MSG 5: Find key file - 2 sec]
+2026-05-31 01:41:03.962 getFileInfoInternal: /57/fidd.message
+2026-05-31 01:41:04.902 getFileInfoInternal: /57/keys
+2026-05-31 01:41:05.430 getFileInfoInternal: /57/keys/T.fidd.key.crypt
+
+[MSG 5: Read key file - 6 sec]
+2026-05-31 01:41:05.950 readAllBytes: /57/keys/T.fidd.key.crypt
+2026-05-31 01:41:08.696 getSubInputStream: /57/fidd.message, offset: 0, length: 3530
+
+[TOTAL: read 5 messages, 36 sec]

@@ -4,6 +4,7 @@ import com.fidd.base.BaseRepositories;
 import com.fidd.base.DefaultBaseRepositories;
 import com.fidd.connectors.cache.ram.RamCache;
 import com.fidd.view.forms.MainForm;
+import com.fidd.view.http.HttpFiddApiServer;
 import com.fidd.view.rest.invoker.FiddHttpServerVerticle;
 import com.fidd.view.serviceCache.FiddContentServiceCache;
 import com.fidd.view.serviceCache.concurrent.ConcurrentFiddContentServiceCache;
@@ -16,6 +17,10 @@ import javafx.scene.Scene;
 import javafx.stage.Stage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.time.Instant;
+
+import static com.fidd.core.common.Format.FMT;
 
 /**
  * Don't run this class directly, use `AppLauncher`.
@@ -42,12 +47,16 @@ public class App extends Application {
             BaseRepositories repositories = new DefaultBaseRepositories();
             FiddContentServiceCache fiddContentServiceCache = new ConcurrentFiddContentServiceCache();
 
+            int nettyFileDownloadServerPort = 4198;
+            HttpFiddApiServer server = HttpFiddApiServer.runServer(fiddContentServiceCache, repositories, nettyFileDownloadServerPort);
+            LOGGER.info(FMT.format(Instant.now()) + " Started HTTP API server on port {}", nettyFileDownloadServerPort);
+
             int fiddApiServerPort = 4199;
 
             Vertx vertx = Vertx.vertx();
 
             // Deploy the generated Vert.x/Netty HTTP server verticle
-            vertx.deployVerticle(new FiddHttpServerVerticle("openapi/openapi.yaml", fiddContentServiceCache, repositories))
+            vertx.deployVerticle(new FiddHttpServerVerticle("openapi/openapi.yaml", fiddContentServiceCache, fiddApiServerPort))
                     .onSuccess(id -> LOGGER.info("Vert.x/Netty server started successfully. Deployment ID: " + id))
                     .onFailure(err -> {
                         LOGGER.error("Failed to start HTTP server", err);
@@ -61,13 +70,15 @@ public class App extends Application {
                     UNENCRYPTED_FIDD_KEY_CACHE_CAPACITY, FIDD_MESSAGE_CHUNK_CACHE_CAPACITY);
 
             MainForm mainForm = fxmlLoader.getController();
-            mainForm.init(mainStage, repositories, fiddContentServiceCache, "localhost", fiddApiServerPort, ramCache);
+            mainForm.init(mainStage, repositories, fiddContentServiceCache, "localhost",
+                    nettyFileDownloadServerPort, ramCache);
 
             Scene mainScene = new Scene(rootNode, 1024, 768);
 
             //Close all threads when we close JavaFX windows.
             mainStage.setOnHidden(event -> {
                 try {
+                    server.stopServer();
                     vertx.close().result();
                     LOGGER.info("Vert.x/Netty server stopped.");
                 } catch (Exception e) {
