@@ -68,7 +68,6 @@ public class FolderFiddConnector extends BaseDirectoryConnector implements FiddC
         List<FileListInfo> fileListInfos = new ArrayList<>();
         if (isDirectory) {
             try (DirectoryStream<Path> directoryStream = Files.newDirectoryStream(Path.of(path))) {
-                List<String> result = new ArrayList<>();
                 for (Path childPath : directoryStream) {
                     try {
                         fileListInfos.add(new FileListInfo(childPath.toString(), Files.isDirectory(childPath)));
@@ -77,7 +76,7 @@ public class FolderFiddConnector extends BaseDirectoryConnector implements FiddC
                     }
                 }
             } catch (IOException e) {
-                LOGGER.error("Error reading directory: " + e.getMessage());
+                LOGGER.error("Error reading directory: {}", path, e);
                 throw e;
             }
         }

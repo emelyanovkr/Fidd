@@ -76,6 +76,7 @@ public class YandexDiskFiddConnector extends BaseDirectoryConnector implements F
             }
             return new FileInfo("dir".equals(mainResource.getType()), mainResource.getSize(), result);
         } catch (HttpCodeException he) {
+            // Will throw 404 if not found
             if (he.getCode() == 404) {
                 throw new FileNotFoundException("Path not found: " + path);
             }

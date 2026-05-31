@@ -45,9 +45,7 @@ public abstract class BaseDirectoryConnector implements FiddConnector {
         FileInfo fileInfo = fileInfoCache.getIfPresent(path);
         if (fileInfo == null) {
             fileInfo = getFileInfoInternal(path);
-            if (fileInfo != null) {
-                fileInfoCache.put(path, fileInfo);
-            }
+            fileInfoCache.put(path, fileInfo);
         }
         return fileInfo;
     }
@@ -76,7 +74,6 @@ public abstract class BaseDirectoryConnector implements FiddConnector {
 
     protected boolean pathExists(String path) throws IOException {
         try {
-            // Will throw 404 if not found
             getFileInfo(path);
             return true;
         } catch (FileNotFoundException e) {
@@ -123,7 +120,7 @@ public abstract class BaseDirectoryConnector implements FiddConnector {
                 }
             }
         } catch (IOException e) {
-            LOGGER.error("Error reading directory: " + e.getMessage());
+            LOGGER.error("Error reading directory.", e);
         }
 
         return messages;
@@ -338,7 +335,7 @@ public abstract class BaseDirectoryConnector implements FiddConnector {
                     }
                 }
             } catch (IOException e) {
-                LOGGER.error("Error reading directory: " + e.getMessage());
+                LOGGER.error("Error reading directory.", e);
             }
 
             return maxIndex + 1;
