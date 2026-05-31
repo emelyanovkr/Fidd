@@ -82,11 +82,13 @@ import java.util.regex.Pattern;
                 .url(url);
 
         long length = downloadListener.getLocalLength();
+        Long size = downloadListener.getLocalSize();
         String ifTag = "If-None-Match";
         if (length >= 0) {
             ifTag = "If-Range";
             StringBuilder contentRange = new StringBuilder();
             contentRange.append("bytes=").append(length).append("-");
+            if (size != null) { contentRange.append(length+size-1); }
             logger.debug("Range: " + contentRange);
             req.addHeader("Range", contentRange.toString());
         }

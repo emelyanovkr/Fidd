@@ -22,6 +22,10 @@ public abstract class DownloadListener implements ProgressListener {
         return 0;
     }
 
+    public Long getLocalSize() {
+        return null;
+    }
+
     /**
      * Used for <tt>If-None-Match</tt> or <tt>If-Range</tt>. MD5 or <tt>null</tt> if not applicable or not known
      * @see <a href="http://tools.ietf.org/html/rfc2616#page-132">rfc 2616</a>
