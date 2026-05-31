@@ -3,6 +3,9 @@ package com.fidd.connectors;
 import javax.annotation.Nullable;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.SequenceInputStream;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public interface FiddConnector {
@@ -28,7 +31,29 @@ public interface FiddConnector {
     InputStream getFiddMessageChunk(long messageNumber, long offset, long length);
 
     /** Chunk bytes Concatenated in return Input Stream */
-    InputStream getFiddMessageChunks(long messageNumber, List<? extends Chunk<?>> chunks);
+    default InputStream getFiddMessageChunks(long messageNumber, List<? extends Chunk<?>> chunks) {
+        if (chunks.isEmpty()) {
+            return InputStream.nullInputStream();
+        }
+
+        List<InputStream> streams = new ArrayList<>();
+        long currentOffset = chunks.get(0).offset();
+        long currentLength = chunks.get(0).length();
+
+        for (int i = 1; i < chunks.size(); i++) {
+            Chunk<?> chunk = chunks.get(i);
+            if (currentOffset + currentLength == chunk.offset()) {
+                currentLength += chunk.length();
+            } else {
+                streams.add(getFiddMessageChunk(messageNumber, currentOffset, currentLength));
+                currentOffset = chunk.offset();
+                currentLength = chunk.length();
+            }
+        }
+        streams.add(getFiddMessageChunk(messageNumber, currentOffset, currentLength));
+
+        return new SequenceInputStream(Collections.enumeration(streams));
+    }
 
     int getFiddKeySignatureCount(long messageNumber);
     byte[] getFiddKeySignature(long messageNumber, int index);

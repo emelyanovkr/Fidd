@@ -1,6 +1,8 @@
 package com.fidd.connectors.base;
 
 import com.fidd.connectors.FiddConnector;
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,21 +30,68 @@ public abstract class BaseDirectoryConnector implements FiddConnector {
     final static Logger LOGGER = LoggerFactory.getLogger(BaseDirectoryConnector.class);
     final static String PATH_SEPARATOR = "/";
 
+    public record FileListInfo(String path, boolean isDirectory) {}
+    public record FileInfo(boolean isDirectory, long size, List<FileListInfo> listing) {}
+
     // Regex: fidd.key.<digits>.sign
     public final static Pattern FIDD_KEY_SIGNATURE_PATTERN = Pattern.compile("fidd\\.key\\.(\\d+)\\.sign");
     // Regex: fidd.message.<digits>.sign
     public final static Pattern FIDD_MESSAGE_SIGNATURE_PATTERN = Pattern.compile("fidd\\.message\\.(\\d+)\\.sign");
 
-    protected abstract List<String> getListing(String fiddPath, boolean isDirectory) throws IOException;
+    // TODO: use global cache for this
+    protected final Cache<String, FileInfo> fileInfoCache = Caffeine.newBuilder().maximumSize(1024).build();
+
+    protected FileInfo getFileInfo(String path) throws IOException {
+        FileInfo fileInfo = fileInfoCache.getIfPresent(path);
+        if (fileInfo == null) {
+            fileInfo = getFileInfoInternal(path);
+            if (fileInfo != null) {
+                fileInfoCache.put(path, fileInfo);
+            }
+        }
+        return fileInfo;
+    }
+
+    protected abstract FileInfo getFileInfoInternal(String path) throws FileNotFoundException, IOException;
     protected abstract String fiddFolderPath();
-    protected abstract boolean pathExists(String path) throws IOException;
-    protected abstract boolean pathIsRegularFile(String path) throws IOException;
     protected abstract byte[] readAllBytes(String path) throws IOException;
-    protected abstract long size(String path) throws IOException;
     protected abstract InputStream getSubInpuStream(String path, long offset, long length) throws IOException;
 
-    protected List<String> getSubDirectoryListing(String fiddPath) throws IOException {
-        return getListing(fiddPath, true);
+    // TODO: listing speed can be improved with sort, offset, limit parameters of the request
+    protected List<String> getListing(String fiddPath, boolean isDirectory) throws IOException {
+        FileInfo fileInfo = getFileInfo(fiddPath);
+
+        List<String> result = new ArrayList<>();
+        for (FileListInfo fileListInfo : fileInfo.listing()) {
+            if (isDirectory && fileListInfo.isDirectory()) {
+                // Add dir
+                result.add(fileListInfo.path());
+            } else if (!isDirectory && !fileListInfo.isDirectory()) {
+                //Add file
+                result.add(fileListInfo.path());
+            }
+        }
+        return result;
+    }
+
+    protected boolean pathExists(String path) throws IOException {
+        try {
+            // Will throw 404 if not found
+            getFileInfo(path);
+            return true;
+        } catch (FileNotFoundException e) {
+            return false;
+        }
+    }
+
+    protected boolean pathIsRegularFile(String path) throws IOException {
+        FileInfo fileInfo = getFileInfo(path);
+        return !fileInfo.isDirectory();
+    }
+
+    protected long size(String path) throws IOException {
+        FileInfo fileInfo = getFileInfo(path);
+        return fileInfo.size();
     }
 
     protected List<String> getFileListing(String fiddPath) throws IOException {
@@ -60,7 +109,11 @@ public abstract class BaseDirectoryConnector implements FiddConnector {
     protected TreeMap<Long, Long> getMessagesNumberMap(String fiddPath, Comparator<Long> comparator) {
         TreeMap<Long, Long> messages = new TreeMap<>(comparator);
         try {
-            List<String> subDirectoryList = getSubDirectoryListing(fiddPath);
+            List<String> subDirectoryList = getFileInfoInternal(fiddPath)
+                    .listing().stream()
+                    .filter(FileListInfo::isDirectory)
+                    .map(FileListInfo::path)
+                    .toList();
             for (String path : subDirectoryList) {
                 try {
                     Long msgNum = Long.parseLong(getFileName(path));
@@ -70,7 +123,7 @@ public abstract class BaseDirectoryConnector implements FiddConnector {
                 }
             }
         } catch (IOException e) {
-            System.err.println("Error reading directory: " + e.getMessage());
+            LOGGER.error("Error reading directory: " + e.getMessage());
         }
 
         return messages;
@@ -285,7 +338,7 @@ public abstract class BaseDirectoryConnector implements FiddConnector {
                     }
                 }
             } catch (IOException e) {
-                System.err.println("Error reading directory: " + e.getMessage());
+                LOGGER.error("Error reading directory: " + e.getMessage());
             }
 
             return maxIndex + 1;
