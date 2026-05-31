@@ -15,6 +15,7 @@ import com.yandex.disk.rest.exceptions.ServerException;
 import com.yandex.disk.rest.exceptions.ServerIOException;
 import com.yandex.disk.rest.exceptions.http.HttpCodeException;
 import com.yandex.disk.rest.json.Resource;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,8 +41,14 @@ public class YandexDiskFiddConnector extends BaseDirectoryConnector implements F
         try {
             String userInfo = fiddFolderUrl.getUserInfo();
             String[] userInfoParts = userInfo.split(":");
-            user = userInfoParts[0];
-            token = userInfoParts[1];
+            if (userInfoParts.length == 1) {
+                user = "ydisk";
+                token = userInfoParts[0];
+            } else {
+                user = userInfoParts[0];
+                token = userInfoParts[1];
+            }
+
             fiddFolderPath = fiddFolderUrl.getPath();
             client = new RestClient(new Credentials(user, token));
         } catch (Exception e) {
@@ -51,21 +58,29 @@ public class YandexDiskFiddConnector extends BaseDirectoryConnector implements F
 
     // TODO: listing speed can be improved with sort, offset, limit parameters of the request
     @Override
-    protected List<String> getListing(String fiddPath, boolean isDirectory) throws IOException {
-        ResourcesArgs rootDirSubdirArgs = new ResourcesArgs.Builder().setPath("/").build();
+    protected FileInfo getFileInfoInternal(String path) throws FileNotFoundException, IOException {
+        ResourcesArgs rootDirSubdirArgs = new ResourcesArgs.Builder().setPath(StringUtils.defaultIfBlank(path, "/")).build();
         try {
-            List<String> result = new ArrayList<>();
-            Resource resources = client.getResources(rootDirSubdirArgs);
-            for (Resource resource : resources.getResourceList().getItems()) {
-                if (isDirectory && "dir".equals(resource.getType())) {
-                    // Add dir
-                    result.add(resource.getPath().getPath());
-                } else if (!isDirectory && "file".equals(resource.getType())) {
-                    //Add file
-                    result.add(resource.getPath().getPath());
+            List<FileListInfo> result = new ArrayList<>();
+            Resource mainResource = client.getResources(rootDirSubdirArgs);
+            if (mainResource.getResourceList() != null) {
+                for (Resource childResource : mainResource.getResourceList().getItems()) {
+                    if ("dir".equals(childResource.getType())) {
+                        // Add dir
+                        result.add(new FileListInfo(childResource.getPath().getPath(), true));
+                    } else if ("file".equals(childResource.getType())) {
+                        //Add file
+                        result.add(new FileListInfo(childResource.getPath().getPath(), false));
+                    }
                 }
             }
-            return result;
+            return new FileInfo("dir".equals(mainResource.getType()), mainResource.getSize(), result);
+        } catch (HttpCodeException he) {
+            // Will throw 404 if not found
+            if (he.getCode() == 404) {
+                throw new FileNotFoundException("Path not found: " + path);
+            }
+            throw new IOException(he);
         } catch (ServerIOException e) {
             throw new IOException(e);
         }
@@ -73,51 +88,6 @@ public class YandexDiskFiddConnector extends BaseDirectoryConnector implements F
 
     @Override
     protected String fiddFolderPath() { return fiddFolderPath; }
-
-    protected List<Resource> getSingleItemResources(String path) throws ServerIOException, IOException {
-        ResourcesArgs singlePathArgs = new ResourcesArgs.Builder().setPath(path).setLimit(1).setFields("name,type,size").build();
-        Resource resource = client.getResources(singlePathArgs);
-        return List.of(resource);
-    }
-
-    // TODO: Those methods can be combined into 1 request
-    @Override
-    protected boolean pathExists(String path) throws IOException {
-        try {
-            List<Resource> items = getSingleItemResources(path);
-            return !items.isEmpty();
-        } catch (HttpCodeException e) {
-            if (e.getCode() == 404) {
-                return false;
-            } else {
-                throw new IOException(e);
-            }
-        } catch (ServerIOException e) {
-            throw new IOException(e);
-        }
-    }
-
-    @Override
-    protected boolean pathIsRegularFile(String path) throws IOException {
-        try {
-            List<Resource> items = getSingleItemResources(path);
-            if (items.isEmpty()) { throw new FileNotFoundException(); }
-            return "file".equals(items.get(0).getType());
-        } catch (ServerIOException e) {
-            throw new IOException(e);
-        }
-    }
-
-    @Override
-    protected long size(String path) throws IOException {
-        try {
-            List<Resource> items = getSingleItemResources(path);
-            if (items.isEmpty()) { throw new FileNotFoundException(); }
-            return items.get(0).getSize();
-        } catch (ServerIOException e) {
-            throw new IOException(e);
-        }
-    }
 
     @Override
     protected byte[] readAllBytes(String path) throws IOException {
@@ -155,6 +125,9 @@ public class YandexDiskFiddConnector extends BaseDirectoryConnector implements F
                     public long getLocalLength() { return offset; }
 
                     @Override
+                    public Long getLocalSize() { return length; }
+
+                    @Override
                     public OutputStream getOutputStream(boolean append) throws IOException {
                         return os;
                     }
@@ -168,10 +141,5 @@ public class YandexDiskFiddConnector extends BaseDirectoryConnector implements F
         }).start();
 
         return is;
-    }
-
-    @Override
-    public InputStream getFiddMessageChunks(long messageNumber, List<? extends Chunk<?>> chunks) {
-        throw new UnsupportedOperationException();
     }
 }

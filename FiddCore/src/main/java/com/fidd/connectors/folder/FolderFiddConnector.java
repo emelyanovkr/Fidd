@@ -10,15 +10,12 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.SequenceInputStream;
-import java.io.UncheckedIOException;
 import java.net.URL;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 public class FolderFiddConnector extends BaseDirectoryConnector implements FiddConnector {
@@ -48,46 +45,11 @@ public class FolderFiddConnector extends BaseDirectoryConnector implements FiddC
     }
 
     @Override
-    protected List<String> getListing(String fiddPath, boolean isDirectory) throws IOException {
-        try (DirectoryStream<Path> directoryStream = Files.newDirectoryStream(
-                Path.of(fiddPath), f -> isDirectory ? Files.isDirectory(f) :  Files.isRegularFile(f))) {
-            List<String> result = new ArrayList<>();
-            for (Path path : directoryStream) {
-                try {
-                    result.add(path.toString());
-                } catch(Exception e) {
-                    LOGGER.debug("Fidd subfolder is not a message / message number parse error", e);
-                }
-            }
-
-            return result;
-        } catch (IOException e) {
-            System.err.println("Error reading directory: " + e.getMessage());
-            throw e;
-        }
-    }
-
-    @Override
     protected String fiddFolderPath() { return fiddFolder.toString(); }
-
-    @Override
-    protected boolean pathExists(String path) {
-        return Files.exists(Path.of(path));
-    }
-
-    @Override
-    protected boolean pathIsRegularFile(String path) {
-        return Files.isRegularFile(Path.of(path));
-    }
 
     @Override
     protected byte[] readAllBytes(String path) throws IOException {
         return Files.readAllBytes(Path.of(path));
-    }
-
-    @Override
-    protected long size(String path) throws IOException {
-        return Files.size(Path.of(path));
     }
 
     @Override
@@ -96,20 +58,29 @@ public class FolderFiddConnector extends BaseDirectoryConnector implements FiddC
     }
 
     @Override
-    public InputStream getFiddMessageChunks(long messageNumber, List<? extends Chunk<?>> chunks) {
-        try {
-            String messageFilePath = messageFilePath(messageNumber);
-            if (!pathExists(messageFilePath) || !pathIsRegularFile(messageFilePath)) {
-                throw new FileNotFoundException("Message file not found: " + messageNumber);
-            }
-
-            List<InputStream> streams = new ArrayList<>(chunks.size());
-            for (Chunk<?> chunk : chunks) {
-                streams.add(getSubInpuStream(messageFilePath, chunk.offset(), chunk.length()));
-            }
-            return new SequenceInputStream(Collections.enumeration(streams));
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
+    protected FileInfo getFileInfoInternal(String path) throws FileNotFoundException, IOException {
+        if (!Files.exists(Path.of(path))) {
+            throw new FileNotFoundException("Path not found: " + path);
         }
+        boolean isDirectory = Files.isDirectory(Path.of(path));
+        long size = Files.size(Path.of(path));
+
+        List<FileListInfo> fileListInfos = new ArrayList<>();
+        if (isDirectory) {
+            try (DirectoryStream<Path> directoryStream = Files.newDirectoryStream(Path.of(path))) {
+                for (Path childPath : directoryStream) {
+                    try {
+                        fileListInfos.add(new FileListInfo(childPath.toString(), Files.isDirectory(childPath)));
+                    } catch(Exception e) {
+                        LOGGER.debug("Fidd subfolder is not a message / message number parse error: {}", childPath, e);
+                    }
+                }
+            } catch (IOException e) {
+                LOGGER.error("Error reading directory: {}", path, e);
+                throw e;
+            }
+        }
+
+        return new FileInfo(isDirectory, size, fileListInfos);
     }
 }
