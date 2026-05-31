@@ -1,0 +1,78 @@
+http://localhost:8080/ydisk/53/?list=m3u&filterIn=*.mp3&filterIn=*.opus&filterOut=*._*&sort=NUMERICAL_ASC&includeSubfolders=false
+
+Здесь он творит какую-то дичь, что-то подгружает из файлов заранее, по два раза все открывает, короче, даже анализировать не хочу.
+
+-------------------------------------
+
+CELLULOID transfer
+
+READ PLAYLIST
+
+2026-05-31 02:04:18.247 getFileInfoInternal: /53/fidd.message
+2026-05-31 02:04:18.843 getFileInfoInternal: /53/keys
+2026-05-31 02:04:19.469 getFileInfoInternal: /53/keys/3.fidd.key.crypt
+2026-05-31 02:04:19.999 readAllBytes: /53/keys/3.fidd.key.crypt
+2026-05-31 02:04:19.999 readAllBytes: /53/keys/3.fidd.key.crypt
+2026-05-31 02:04:22.815 getSubInputStream: /53/fidd.message, offset: 51399411, length: 9981
+2026-05-31 02:04:23.889 getSubInputStream: /53/fidd.message, offset: 51399411, length: 9981
+
+2026-05-31 02:04:27.244 getSubInputStream: /53/fidd.message, offset: 4096, length: 8768826
+2026-05-31 02:04:27.783 getSubInputStream: /53/fidd.message, offset: 4096, length: 8768826
+2026-05-31 02:04:36.259 ReadLogicalFileChunk for range 0-8768825 (content length: 8768826)
+2026-05-31 02:04:36.284 2808b464 File: 1 SONG_1.mp3. act=1 st=0 end=8768825 len=8768826  Chunked rng transfer started.
+
+2026-05-31 02:04:38.348 ReadLogicalFileChunk for range 0-8768825 (content length: 8768826)
+2026-05-31 02:04:38.348 70b7d4ab File: 1 SONG_1.mp3. act=2 st=0 end=8768825 len=8768826  Chunked rng transfer started.
+
+2026-05-31 02:04:38.897 ERROR FINISH 70b7d4ab File: 1 SONG_1.mp3. act=1 Transfer stopped. Data transferred: 0. Connection closed: true | java.io.IOException: Connection reset by peer
+
+2026-05-31 02:04:39.220 getSubInputStream: /53/fidd.message, offset: 35675744, length: 15723667
+2026-05-31 02:04:52.117 ReadLogicalFileChunk for range 0-15723666 (content length: 15723667)
+2026-05-31 02:04:52.118 206c5d53 File: 2 SONG_2.mp3. act=2 st=0 end=15723666 len=15723667  Chunked rng transfer started.
+
+2026-05-31 02:04:52.587 ERROR FINISH 206c5d53 File: 2 SONG_2.mp3. act=1 Transfer stopped. Data transferred: 0. Connection closed: true | java.io.IOException: Connection reset by peer
+
+2026-05-31 02:04:52.910 getSubInputStream: /53/fidd.message, offset: 8781114, length: 11792761
+2026-05-31 02:05:04.818 ReadLogicalFileChunk for range 0-11792760 (content length: 11792761)
+2026-05-31 02:05:04.818 fe2d95c5 File: 3 SONG_3.mp3. act=2 st=0 end=11792760 len=11792761  Chunked rng transfer started.
+
+2026-05-31 02:05:05.214 ERROR FINISH fe2d95c5 File: 3 SONG_3.mp3. act=1 Transfer stopped. Data transferred: 0. Connection closed: true | java.io.IOException: Connection reset by peer
+
+2026-05-31 02:05:05.541 getSubInputStream: /53/fidd.message, offset: 20573875, length: 15097773
+2026-05-31 02:05:24.317 ReadLogicalFileChunk for range 0-15097772 (content length: 15097773)
+2026-05-31 02:05:24.317 f3ccb14b File: 4 SONG_4.mp3. act=2 st=0 end=15097772 len=15097773  Chunked rng transfer started.
+
+2026-05-31 02:05:24.768 ERROR FINISH f3ccb14b File: 4 SONG_4.mp3. act=1 Transfer stopped. Data transferred: 0. Connection closed: true | java.io.IOException: Connection reset by peer
+
+2026-05-31 02:05:25.132 getSubInputStream: /53/fidd.message, offset: 4096, length: 8768826
+
+2026-05-31 02:05:31.084 COMPLETE FINISH 2808b464 File: 1 SONG_1.mp3. act=0 Transfer complete. Data transferred: 0
+
+2026-05-31 02:05:36.828 ReadLogicalFileChunk for range 0-8768825 (content length: 8768826)
+2026-05-31 02:05:36.829 570bfd48 File: 1 SONG_1.mp3. act=1 st=0 end=8768825 len=8768826  Chunked rng transfer started.
+
+2026-05-31 02:05:37.180 ERROR FINISH 570bfd48 File: 1 SONG_1.mp3. act=0 Transfer stopped. Data transferred: 0. Connection closed: true | java.io.IOException: Connection reset by peer
+
+2026-05-31 02:05:37.532 getSubInputStream: /53/fidd.message, offset: 35675744, length: 15723667
+2026-05-31 02:05:55.568 ReadLogicalFileChunk for range 0-15723666 (content length: 15723667)
+2026-05-31 02:05:55.568 eca77aaf File: 2 SONG_2.mp3. act=1 st=0 end=15723666 len=15723667  Chunked rng transfer started.
+
+2026-05-31 02:05:55.958 ERROR FINISH eca77aaf File: 2 SONG_2.mp3. act=0 Transfer stopped. Data transferred: 0. Connection closed: true | java.io.IOException: Connection reset by peer
+
+2026-05-31 02:05:56.283 getSubInputStream: /53/fidd.message, offset: 8781114, length: 11792761
+2026-05-31 02:06:12.768 ReadLogicalFileChunk for range 0-11792760 (content length: 11792761)
+2026-05-31 02:06:12.768 fda4cfab File: 3 SONG_3.mp3. act=1 st=0 end=11792760 len=11792761  Chunked rng transfer started.
+
+2026-05-31 02:06:13.133 ERROR FINISH fda4cfab File: 3 SONG_3.mp3. act=0 Transfer stopped. Data transferred: 0. Connection closed: true | java.io.IOException: Connection reset by peer
+
+2026-05-31 02:06:13.466 getSubInputStream: /53/fidd.message, offset: 20573875, length: 15097773
+2026-05-31 02:06:31.932 ReadLogicalFileChunk for range 0-15097772 (content length: 15097773)
+2026-05-31 02:06:31.932 34c87cec File: 4 SONG_4.mp3. act=1 st=0 end=15097772 len=15097773  Chunked rng transfer started.
+
+2026-05-31 02:06:32.319 ERROR FINISH 34c87cec File: 4 SONG_4.mp3. act=0 Transfer stopped. Data transferred: 0. Connection closed: true | java.io.IOException: Connection reset by peer
+
+SONG 2
+
+2026-05-31 02:08:16.637 getSubInputStream: /53/fidd.message, offset: 35675744, length: 15723667
+2026-05-31 02:08:29.113 ReadLogicalFileChunk for range 0-15723666 (content length: 15723667)
+2026-05-31 02:08:29.114 7fad968b File: 2 SONG_2.mp3. act=1 st=0 end=15723666 len=15723667  Chunked rng transfer started.

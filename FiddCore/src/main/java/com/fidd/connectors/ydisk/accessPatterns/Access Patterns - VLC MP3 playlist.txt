@@ -1,0 +1,57 @@
+http://localhost:8080/ydisk/53/?list=m3u&filterIn=*.mp3&filterIn=*.opus&filterOut=*._*&sort=NUMERICAL_ASC&includeSubfolders=false
+
+-------------------------------------
+
+VLC transfer
+
+READ PLAYLIST
+
+2026-05-31 01:47:32.359 getFileInfoInternal: /53/fidd.message
+2026-05-31 01:47:33.914 getFileInfoInternal: /53/keys
+2026-05-31 01:47:34.481 getFileInfoInternal: /53/keys/3.fidd.key.crypt
+2026-05-31 01:47:34.950 readAllBytes: /53/keys/3.fidd.key.crypt
+2026-05-31 01:47:38.629 getSubInputStream: /53/fidd.message, offset: 51399411, length: 9981
+
+SONG 1
+
+2026-05-31 01:47:42.039 getSubInputStream: /53/fidd.message, offset: 4096, length: 8768826
+[wait before file transfer starts, 7 seconds]
+2026-05-31 01:47:49.650 ReadLogicalFileChunk for range 0-8768825 (content length: 8768826)
+2026-05-31 01:47:49.660 064aa1a4 File: 1 SONG_1.mp3. act=1 st=0 end=8768825 len=8768826  Chunked rng transfer started.
+[8.7 mb downloaded in 47 seconds]
+2026-05-31 01:48:36.953 COMPLETE FINISH 064aa1a4 File: 1 SONG_1.mp3. act=0 Transfer complete. Data transferred: 0
+
+SONG 2
+
+2026-05-31 01:51:07.990 getSubInputStream: /53/fidd.message, offset: 35675744, length: 15723667
+[wait before file transfer starts, 18 seconds]
+2026-05-31 01:51:25.499 ReadLogicalFileChunk for range 0-15723666 (content length: 15723667)
+2026-05-31 01:51:25.499 e8c44340 File: 2 SONG_2.mp3. act=1 st=0 end=15723666 len=15723667  Chunked rng transfer started.
+[15.7 mb downloaded in 1 minute 23 seconds]
+2026-05-31 01:52:48.814 COMPLETE FINISH e8c44340 File: 2 SONG_2.mp3. act=0 Transfer complete. Data transferred: 0
+
+SONG 3
+
+2026-05-31 01:55:12.836 getSubInputStream: /53/fidd.message, offset: 8781114, length: 11792761
+[wait before file transfer starts, 10 seconds]
+2026-05-31 01:55:22.899 ReadLogicalFileChunk for range 0-11792760 (content length: 11792761)
+2026-05-31 01:55:22.900 45e0be78 File: 3 SONG_3.mp3. act=1 st=0 end=11792760 len=11792761  Chunked rng transfer started.
+
+[jumped to the end of the song]
+2026-05-31 01:55:30.554 getSubInputStream: /53/fidd.message, offset: 20189432, length: 384443
+[wait before new transfer starts, 12 seconds]
+2026-05-31 01:55:32.818 ReadLogicalFileChunk for range 11408318-11792760 (content length: 384443)
+2026-05-31 01:55:32.818 add91795 File: 3 SONG_3.mp3. act=2 st=11408318 end=11792760 len=384443  Chunked rng transfer started.
+
+[first transfer closed]
+2026-05-31 01:55:32.826 ERROR FINISH 45e0be78 File: 3 SONG_3.mp3. act=1 Transfer stopped. Data transferred: 2588994. Connection closed: false | java.io.IOException: Broken pipe
+[second transfer completed]
+2026-05-31 01:55:34.999 COMPLETE FINISH add91795 File: 3 SONG_3.mp3. act=0 Transfer complete. Data transferred: 0
+
+SONG 4
+
+2026-05-31 01:55:54.978 ReadLogicalFileChunk for range 0-15097772 (content length: 15097773)
+[wait before file transfer starts, 1 millisecond this time? m.b. cache hit]
+2026-05-31 01:55:54.979 8f5b805f File: 4 SONG_4.mp3. act=1 st=0 end=15097772 len=15097773  Chunked rng transfer started.
+[15.09 mb downloaded in 1 minute 23 seconds]
+2026-05-31 01:57:17.481 COMPLETE FINISH 8f5b805f File: 4 SONG_4.mp3. act=0 Transfer complete. Data transferred: 0
