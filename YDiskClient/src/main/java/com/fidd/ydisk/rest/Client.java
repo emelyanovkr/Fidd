@@ -104,7 +104,7 @@ public class Client {
 
         HttpResponse<java.io.InputStream> response = httpClient.send(getRequest, HttpResponse.BodyHandlers.ofInputStream());
 
-        System.out.println(FMT.format(Instant.now()) + " Download response status: " + response.statusCode() + " for URI: " + uri);
+        //System.out.println(FMT.format(Instant.now()) + " Download response status: " + response.statusCode() + " for URI: " + uri);
 
         if (response.statusCode() >= 300 && response.statusCode() < 400) {
             String loc = response.headers().firstValue("location").orElseThrow(() -> new RuntimeException("Redirect without Location"));
@@ -117,6 +117,9 @@ public class Client {
     }
 
     public Link getUploadLink(String remotePath, boolean overwrite) throws Exception {
+        // TODO: remotePath is interpolated into the query string without URL-encoding.
+        //  Paths containing spaces, : (e.g. disk:/...), #, etc. will produce invalid requests or be parsed incorrectly
+        //  by the server. Encode the query parameter value (as you already do in getResources).
         String endpoint = "/resources/upload?path=" + remotePath + "&overwrite=" + overwrite;
         HttpRequest request = baseRequest(endpoint).GET().build();
         return send(request, Link.class);
@@ -138,6 +141,8 @@ public class Client {
     }
 
     public Link getDownloadLink(String remotePath) throws Exception {
+        // TODO: remotePath is interpolated into the query string without URL-encoding, which will break for paths
+        //  with reserved characters. Encode the query parameter value before building the endpoint.
         String endpoint = "/resources/download?path=" + remotePath;
         HttpRequest request = baseRequest(endpoint).GET().build();
         return send(request, Link.class);

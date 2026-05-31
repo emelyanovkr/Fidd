@@ -115,6 +115,9 @@ public class ClientTest {
                 "  \"templated\": false\n" +
                 "}";
 
+        // TODO: This test hard-codes the unencoded query string (path=/test.txt), but the client should URL-encode
+        //  query parameter values. After encoding is added, the mocked request path should use path=%2Ftest.txt
+        //  (and similarly for other download-link tests).
         responses.put("/resources/download?path=/test.txt", json);
 
         Link link = client.getDownloadLink("/test.txt");
@@ -127,6 +130,7 @@ public class ClientTest {
     public void testDownloadFile() throws Exception {
         // 1. the download link fetch
         String linkJson = "{\"href\": \"" + serverUrl + "/actual-download\", \"method\": \"GET\", \"templated\": false}";
+        // TODO: If the client URL-encodes remotePath, the expected request path should be path=%2Ffile.txt.
         responses.put("/resources/download?path=/file.txt", linkJson);
 
         // 2. the actual download

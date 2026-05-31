@@ -38,7 +38,7 @@ public final class HttpFiddApiServer {
   final BaseRepositories baseRepositories;
 
     public HttpFiddApiServer(FiddContentServiceCache serviceCache, BaseRepositories baseRepositories) {
-        this(1, 1, serviceCache, baseRepositories);
+        this(0, 0, serviceCache, baseRepositories);
     }
 
     public HttpFiddApiServer(int bossGroupThreadCount, int workerGroupThreadCount,
@@ -54,8 +54,8 @@ public final class HttpFiddApiServer {
     // Configure SSL.
     final SslContext sslCtx = ServerUtil.buildSslContext();
 
-    bossGroup = new NioEventLoopGroup();
-    workerGroup = new NioEventLoopGroup();
+    bossGroup = new NioEventLoopGroup(bossGroupThreadCount);
+    workerGroup = new NioEventLoopGroup(workerGroupThreadCount);
 
     ServerBootstrap b = new ServerBootstrap();
     b.group(bossGroup, workerGroup)

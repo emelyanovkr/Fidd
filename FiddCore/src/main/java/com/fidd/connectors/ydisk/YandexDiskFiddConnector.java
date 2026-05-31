@@ -107,6 +107,8 @@ public class YandexDiskFiddConnector extends BaseDirectoryConnector implements F
 //        System.out.println(FMT.format(Instant.now()) + " getSubInputStream: " + path + ", offset: " + offset + ", length: " + length);
         try {
             return client.downloadFileWithRange(path, offset, length);
+        } catch (IOException ie) {
+            throw ie;
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

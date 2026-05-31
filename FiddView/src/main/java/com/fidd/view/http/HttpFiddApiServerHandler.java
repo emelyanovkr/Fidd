@@ -360,6 +360,7 @@ public class HttpFiddApiServerHandler extends SimpleChannelInboundHandler<FullHt
           sendFileFuture.addListener(ChannelFutureListener.CLOSE);
         }
       }
+      return;
     }
 
     // -----------------------------------------------
@@ -403,6 +404,9 @@ public class HttpFiddApiServerHandler extends SimpleChannelInboundHandler<FullHt
 
     long fileLengthEncrypted = logicalFileInfo.section().sectionLength();
     EncryptionAlgorithm encryptionAlgorithm = baseRepositories.encryptionAlgorithmRepo().get(logicalFileInfo.section().encryptionAlgorithm());
+    // TODO: encryptionAlgorithmRepo().get(...) can return null (there are tests covering this case).
+    //  The current checkNotNull(encryptionAlgorithm) will NPE and turn a recoverable request error into a 500.
+    //  Return a 501/NOT_IMPLEMENTED (or another explicit error) when the algorithm is missing.
     long fileLength = checkNotNull(encryptionAlgorithm).ciphertextLengthToPlaintextLength(fileLengthEncrypted);
 
     HttpResponse response;
@@ -521,9 +525,9 @@ public class HttpFiddApiServerHandler extends SimpleChannelInboundHandler<FullHt
             if (streamToClose != null) {
               streamToClose.close();
             }
-            System.out.printf(FMT.format(Instant.now()) + "CLOSED STREAM for %s File: %s\n", future.channel().id(), filePath);
+            //System.out.printf(FMT.format(Instant.now()) + "CLOSED STREAM for %s File: %s\n", future.channel().id(), filePath);
           } catch (java.io.IOException e) {
-            System.out.printf(FMT.format(Instant.now()) + "FAILED TO CLOSE STREAM for %s File: %s | %3\n", future.channel().id(), filePath, e.getMessage());
+            //System.out.printf(FMT.format(Instant.now()) + "FAILED TO CLOSE STREAM for %s File: %s | %s\n", future.channel().id(), filePath, e.getMessage());
             LOGGER.warn("Failed to close input stream on ERROR FINISH for file: {}", filePath, e);
           }
         }
