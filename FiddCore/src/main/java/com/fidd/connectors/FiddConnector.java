@@ -5,8 +5,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.SequenceInputStream;
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.Enumeration;
 import java.util.List;
+import java.util.NoSuchElementException;
 
 public interface FiddConnector {
     record Chunk<T> (long offset, long length, T info) {}
@@ -36,7 +37,8 @@ public interface FiddConnector {
             return InputStream.nullInputStream();
         }
 
-        List<InputStream> streams = new ArrayList<>();
+        record MergedChunk(long offset, long length) {}
+        List<MergedChunk> mergedChunks = new ArrayList<>();
         long currentOffset = chunks.get(0).offset();
         long currentLength = chunks.get(0).length();
 
@@ -45,14 +47,30 @@ public interface FiddConnector {
             if (currentOffset + currentLength == chunk.offset()) {
                 currentLength += chunk.length();
             } else {
-                streams.add(getFiddMessageChunk(messageNumber, currentOffset, currentLength));
+                mergedChunks.add(new MergedChunk(currentOffset, currentLength));
                 currentOffset = chunk.offset();
                 currentLength = chunk.length();
             }
         }
-        streams.add(getFiddMessageChunk(messageNumber, currentOffset, currentLength));
+        mergedChunks.add(new MergedChunk(currentOffset, currentLength));
 
-        return new SequenceInputStream(Collections.enumeration(streams));
+        return new SequenceInputStream(new Enumeration<>() {
+            int index = 0;
+
+            @Override
+            public boolean hasMoreElements() {
+                return index < mergedChunks.size();
+            }
+
+            @Override
+            public InputStream nextElement() {
+                if (!hasMoreElements()) {
+                    throw new NoSuchElementException();
+                }
+                MergedChunk chunk = mergedChunks.get(index++);
+                return getFiddMessageChunk(messageNumber, chunk.offset(), chunk.length());
+            }
+        });
     }
 
     int getFiddKeySignatureCount(long messageNumber);
