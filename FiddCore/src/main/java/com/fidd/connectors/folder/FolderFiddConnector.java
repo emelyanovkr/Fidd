@@ -49,16 +49,27 @@ public class FolderFiddConnector extends BaseDirectoryConnector implements FiddC
 
     @Override
     protected byte[] readAllBytes(String path) throws IOException {
+//        System.out.println(FMT.format(Instant.now()) + " readAllBytes: " + path);
         return Files.readAllBytes(Path.of(path));
     }
 
     @Override
     protected InputStream getSubInpuStream(String path, long offset, long length) throws IOException {
+//        System.out.println(FMT.format(Instant.now()) + " getSubInputStream: " + path + ", offset: " + offset + ", length: " + length);
         return SubFileInputStream.of(Path.of(path).toFile(), offset, length);
     }
 
+    // TODO use relative paths to fidd folder
+    @Override
+    protected boolean isRootFolder(String path) {
+        Path folder = new File(path).toPath();
+        return folder.equals(fiddFolder);
+    }
+
+    // TODO use relative paths to fidd folder
     @Override
     protected FileInfo getFileInfoInternal(String path) throws FileNotFoundException, IOException {
+//        System.out.println(FMT.format(Instant.now()) + " getFileInfoInternal: " + path);
         if (!Files.exists(Path.of(path))) {
             throw new FileNotFoundException("Path not found: " + path);
         }

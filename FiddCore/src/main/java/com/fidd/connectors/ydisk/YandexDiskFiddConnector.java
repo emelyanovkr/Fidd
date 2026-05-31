@@ -1,30 +1,20 @@
 package com.fidd.connectors.ydisk;
 
-import com.fidd.common.streamchain.BufferChainInputStream;
-import com.fidd.common.streamchain.BufferChainOutputStream;
-import com.fidd.common.streamchain.OutputStreamLimitReachedException;
-import com.fidd.common.streamchain.chain.BufferChain;
-import com.fidd.common.streamchain.chain.ConcurrentBufferChain;
 import com.fidd.connectors.FiddConnector;
 import com.fidd.connectors.base.BaseDirectoryConnector;
-import com.yandex.disk.rest.Credentials;
-import com.yandex.disk.rest.DownloadListener;
-import com.yandex.disk.rest.ResourcesArgs;
-import com.yandex.disk.rest.RestClient;
-import com.yandex.disk.rest.exceptions.ServerException;
-import com.yandex.disk.rest.exceptions.ServerIOException;
-import com.yandex.disk.rest.exceptions.http.HttpCodeException;
-import com.yandex.disk.rest.json.Resource;
+import com.fidd.ydisk.rest.Client;
+import com.fidd.ydisk.rest.models.Resource;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.net.URL;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -34,7 +24,7 @@ public class YandexDiskFiddConnector extends BaseDirectoryConnector implements F
 
     final String user;
     final String token;
-    final RestClient client;
+    public final Client client;
     final String fiddFolderPath;
 
     public YandexDiskFiddConnector(URL fiddFolderUrl) {
@@ -50,38 +40,44 @@ public class YandexDiskFiddConnector extends BaseDirectoryConnector implements F
             }
 
             fiddFolderPath = fiddFolderUrl.getPath();
-            client = new RestClient(new Credentials(user, token));
+            client = new Client(token, new ObjectMapper());
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
 
+    // TODO: relative paths?
+    @Override
+    protected boolean isRootFolder(String path) {
+        Path folder = new File(path).toPath();
+        Path fiddFolder = new File(fiddFolderPath).toPath();
+        return folder.equals(fiddFolder);
+    }
+
+    // TODO: relative paths?
     // TODO: listing speed can be improved with sort, offset, limit parameters of the request
     @Override
     protected FileInfo getFileInfoInternal(String path) throws FileNotFoundException, IOException {
-        ResourcesArgs rootDirSubdirArgs = new ResourcesArgs.Builder().setPath(StringUtils.defaultIfBlank(path, "/")).build();
+//        System.out.println(FMT.format(Instant.now()) + " getFileInfoInternal: " + path);
         try {
             List<FileListInfo> result = new ArrayList<>();
-            Resource mainResource = client.getResources(rootDirSubdirArgs);
-            if (mainResource.getResourceList() != null) {
-                for (Resource childResource : mainResource.getResourceList().getItems()) {
-                    if ("dir".equals(childResource.getType())) {
+            Resource mainResource = client.getResources(StringUtils.defaultIfBlank(path, "/"));
+            if (mainResource.embedded() != null && mainResource.embedded().items() != null) {
+                for (Resource childResource : mainResource.embedded().items()) {
+                    if ("dir".equals(childResource.type())) {
                         // Add dir
-                        result.add(new FileListInfo(childResource.getPath().getPath(), true));
-                    } else if ("file".equals(childResource.getType())) {
+                        result.add(new FileListInfo(childResource.path(), true));
+                    } else if ("file".equals(childResource.type())) {
                         //Add file
-                        result.add(new FileListInfo(childResource.getPath().getPath(), false));
+                        result.add(new FileListInfo(childResource.path(), false));
                     }
                 }
             }
-            return new FileInfo("dir".equals(mainResource.getType()), mainResource.getSize(), result);
-        } catch (HttpCodeException he) {
-            // Will throw 404 if not found
-            if (he.getCode() == 404) {
+            return new FileInfo("dir".equals(mainResource.type()), mainResource.size() == null ? 0 : mainResource.size(), result);
+        } catch (Exception e) {
+            if (e.getMessage() != null && e.getMessage().contains("404")) {
                 throw new FileNotFoundException("Path not found: " + path);
             }
-            throw new IOException(he);
-        } catch (ServerIOException e) {
             throw new IOException(e);
         }
     }
@@ -92,18 +88,13 @@ public class YandexDiskFiddConnector extends BaseDirectoryConnector implements F
     @Override
     protected byte[] readAllBytes(String path) throws IOException {
         try {
-            ByteArrayOutputStream bos = new ByteArrayOutputStream();
-            client.downloadFile(path, new DownloadListener() {
-                @Override
-                public OutputStream getOutputStream(boolean append) throws IOException {
-                    return bos;
-                }
-            });
-            return bos.toByteArray();
-        } catch (ServerIOException e) {
+//            System.out.println(FMT.format(Instant.now()) + " readAllBytes: " + path);
+            InputStream in = client.downloadFile(path);
+            try (in) {
+                return in.readAllBytes();
+            }
+        } catch (Exception e) {
             throw new IOException(e);
-        } catch (ServerException e) {
-            throw new RuntimeException(e);
         }
     }
 
@@ -113,33 +104,11 @@ public class YandexDiskFiddConnector extends BaseDirectoryConnector implements F
      */
     @Override
     protected InputStream getSubInpuStream(String path, long offset, long length) throws IOException {
-        BufferChain chain = new ConcurrentBufferChain();
-        BufferChainInputStream is = new BufferChainInputStream(chain);
-        BufferChainOutputStream os = new BufferChainOutputStream(chain, (int)BUFFER_SIZE, length);
-
-        // TODO YaDisk Client is blocking, mb use Scheduler here?
-        new Thread(() -> {
-            try {
-                client.downloadFile(path, new DownloadListener() {
-                    @Override
-                    public long getLocalLength() { return offset; }
-
-                    @Override
-                    public Long getLocalSize() { return length; }
-
-                    @Override
-                    public OutputStream getOutputStream(boolean append) throws IOException {
-                        return os;
-                    }
-                });
-            } catch (OutputStreamLimitReachedException e) {
-                // This is our exception, we already got the chunk, ignore
-                //LOGGER.debug("getSubInputStream", e);
-            } catch (IOException | ServerException e) {
-                LOGGER.debug("getSubInputStream", e);
-            }
-        }).start();
-
-        return is;
+//        System.out.println(FMT.format(Instant.now()) + " getSubInputStream: " + path + ", offset: " + offset + ", length: " + length);
+        try {
+            return client.downloadFileWithRange(path, offset, length);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 }

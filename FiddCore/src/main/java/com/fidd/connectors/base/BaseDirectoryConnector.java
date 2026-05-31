@@ -43,6 +43,11 @@ public abstract class BaseDirectoryConnector implements FiddConnector {
     protected final Cache<String, FileInfo> fileInfoCache = Caffeine.newBuilder().maximumSize(1024).build();
 
     protected FileInfo getFileInfo(String path) throws IOException {
+        if (isRootFolder(path)) {
+            // Don't cache root folder
+            return getFileInfoInternal(path);
+        }
+
         try {
             return fileInfoCache.get(path, p -> {
                 try {
@@ -56,6 +61,7 @@ public abstract class BaseDirectoryConnector implements FiddConnector {
         }
     }
 
+    protected abstract boolean isRootFolder(String path);
     protected abstract FileInfo getFileInfoInternal(String path) throws FileNotFoundException, IOException;
     protected abstract String fiddFolderPath();
     protected abstract byte[] readAllBytes(String path) throws IOException;
