@@ -112,7 +112,7 @@ public abstract class BaseDirectoryConnector implements FiddConnector {
     protected TreeMap<Long, Long> getMessagesNumberMap(String fiddPath, Comparator<Long> comparator) {
         TreeMap<Long, Long> messages = new TreeMap<>(comparator);
         try {
-            List<String> subDirectoryList = getFileInfoInternal(fiddPath)
+            List<String> subDirectoryList = getFileInfo(fiddPath)
                     .listing().stream()
                     .filter(FileListInfo::isDirectory)
                     .map(FileListInfo::path)
