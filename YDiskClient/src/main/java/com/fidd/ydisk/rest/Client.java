@@ -67,7 +67,8 @@ public class Client {
     }
 
     public Resource getResources(String path) throws Exception {
-        String endpoint = "/resources?path=" + java.net.URLEncoder.encode(path, StandardCharsets.UTF_8.name());
+        // TODO: normal pagination
+        String endpoint = "/resources?path=" + java.net.URLEncoder.encode(path, StandardCharsets.UTF_8.name()) +"&limit=200";
         HttpRequest request = baseRequest(endpoint).GET().build();
         return send(request, Resource.class);
     }
