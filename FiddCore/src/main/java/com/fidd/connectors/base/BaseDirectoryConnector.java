@@ -229,16 +229,17 @@ public abstract class BaseDirectoryConnector implements FiddConnector {
     protected String keyFolderPath(long messageNumber) { return messageFolderPath(messageNumber) + PATH_SEPARATOR + ENCRYPTED_FIDD_KEY_SUBFOLDER; }
     protected String messageFilePath(long messageNumber) { return messageFolderPath(messageNumber) + PATH_SEPARATOR + FIDD_MESSAGE_FILE_NAME; }
 
-    /*
-    example:
-        disk:/8
-        last '/' = 5
-        last '\' = -1 (cause lastIndexOf if no char occurs returns -1)
-        return substring(6) = "8"
-     */
     protected static String getFileName(String path) {
-        int slashIndex = Math.max(path.lastIndexOf('/'), path.lastIndexOf('\\'));
-        return slashIndex == -1 ? path : path.substring(slashIndex + 1);
+        int end = path.length();
+        while (end > 0 && (path.charAt(end - 1) == '/' || path.charAt(end - 1) == '\\')) {
+            end--;
+        }
+        if (end == 0) {
+            return "";
+        }
+
+        int slashIndex = Math.max(path.lastIndexOf('/', end - 1), path.lastIndexOf('\\', end - 1));
+        return slashIndex == -1 ? path.substring(0, end) : path.substring(slashIndex + 1, end);
     }
 
     protected static String getFileNameNoExtensions(String fileName) {
